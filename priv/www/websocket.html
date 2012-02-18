@@ -1,0 +1,84 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+    <script type="text/javascript" src="/shared/js/jquery.js" charset="utf-8"></script>
+    <script type="text/javascript">
+      var ws = null;
+
+      function addStatus(text){
+        var date = new Date();
+        document.getElementById('status').innerHTML = document.getElementById('status').innerHTML + date + ": " + text + "<br>";				
+      }
+
+      function ready(){
+
+        if ("WebSocket" in window) {
+          ws = new WebSocket("ws://localhost:8080/websocket");
+        } else if ("MozWebSocket" in window) {
+          ws = new MozWebSocket("ws://localhost:8080/websocket");
+        }
+
+        if (ws) {// browser supports websockets
+          ws.onopen = function() {// websocket is connected
+            addStatus("websocket connected!");
+            send_socket({controller: "chat", action: "init"});
+          };
+
+          ws.onmessage = function (evt) {
+	    if (evt.data == "Tick"){ return; }
+	    //alert("you got message!(" + evt.data + ")");
+
+            var data = evt.data;
+	    var msg = JSON.parse(data);
+
+
+	    if (msg == undefined) { return; }
+
+            if (msg.message != undefined) {
+              addStatus("recv: " + msg.message);
+	      return;
+            }
+
+            if (msg.status != undefined && msg.message != undefined) {
+              addStatus("status: " + msg.message);
+	      return;
+            }
+
+            if (msg.result != undefined && msg.result == "error") {
+              alert("エラー: " + msg.reason);
+	      return;
+            }
+
+	    addStatus("Undefined message: " + data);
+          };
+
+          ws.onclose = function() {// websocket was closed
+            addStatus("websocket was closed");
+          }
+
+        } else {// browser does not support websockets
+          addStatus("sorry, your browser does not support websockets.");
+        }
+      }
+
+      function send_socket(obj) {
+        ws.send(JSON.stringify(obj));
+	$("#message").val("");
+      }
+
+      function send_message() {
+        var textMessage = $("#message").val();
+	send_socket({controller:"message", action:"send", text: textMessage});
+      }
+
+    </script>
+  </head>
+
+  <body onload="ready();">
+    <input type="text" name="message" id="message" value="" />
+    <input type="submit" value="送信" onclick="send_message()" />
+
+    <div id="status"></div>
+  </body>
+</html>

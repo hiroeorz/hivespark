@@ -1,0 +1,5 @@
+{application,hivespark}.
+{packages,[]}.
+{modules,[contents_server,hivespark,hivespark_app,hivespark_http_handler,
+          hivespark_sup,hivespark_usr,hivespark_usr_db,
+          hivespark_websocket_handler,json]}.

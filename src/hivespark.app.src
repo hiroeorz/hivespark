@@ -1,0 +1,12 @@
+{application, hivespark,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { hivespark_app, []}},
+  {env, []}
+ ]}.
