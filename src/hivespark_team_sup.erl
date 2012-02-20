@@ -1,12 +1,12 @@
 %%%-------------------------------------------------------------------
-%%% @author Hiroe Shin <hiroe.orz@gmail.com>
+%%% @author Hiroe Shin <shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net>
 %%% @copyright (C) 2012, Hiroe Shin
 %%% @doc
 %%%
 %%% @end
-%%% Created : 16 Feb 2012 by Hiroe Shin <hiroe.orz@gmail.com>
+%%% Created : 20 Feb 2012 by Hiroe Shin <shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net>
 %%%-------------------------------------------------------------------
--module(hivespark_sup).
+-module(hivespark_team_sup).
 
 -behaviour(supervisor).
 
@@ -17,9 +17,6 @@
 -export([init/1]).
 
 -define(SERVER, ?MODULE).
-
-%% Helper macro for declaring children of supervisor
--define(CHILD(I, Type), {I, {I, start_link, []}, permanent, 5000, Type, [I]}).
 
 %%%===================================================================
 %%% API functions
@@ -59,17 +56,14 @@ init([]) ->
 
     SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
 
-    Restart = permanent,
-    Shutdown = 2000,
-    Type = worker,
+%    Restart = permanent,
+%    Shutdown = 2000,
+%    Type = worker,
 
-    ContentsServer = {contents_server, {contents_server, start_link, []},
-                      Restart, Shutdown, Type, [contents_server]},
+%    AChild = {'AName', {'AModule', start_link, []},
+%              Restart, Shutdown, Type, ['AModule']},
 
-    TeamSup = {hivespark_team_sup, {hivespark_team_sup, start_link, []},
-               Restart, Shutdown, Type, [hivespark_team_sup]},
-
-    {ok, {SupFlags, [ContentsServer, TeamSup]}}.
+    {ok, {SupFlags, []}}.
 
 %%%===================================================================
 %%% Internal functions

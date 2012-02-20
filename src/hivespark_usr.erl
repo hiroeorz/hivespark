@@ -4,123 +4,97 @@
 %%% @doc
 %%%
 %%% @end
-%%% Created : 18 Feb 2012 by Hiroe Shin <shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net>
+%%% Created : 20 Feb 2012 by Hiroe Shin <shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net>
 %%%-------------------------------------------------------------------
 -module(hivespark_usr).
 
--behaviour(gen_server).
+%% Include
+-include_lib("eunit/include/eunit.hrl").
+-include("hivespark.hrl").
 
 %% API
--export([start_link/0]).
-
-%% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2,
-         terminate/2, code_change/3]).
-
--define(SERVER, ?MODULE). 
-
--record(state, {}).
+-export([create/6, delete/1, lookup_id/1, lookup_name/1]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 
 %%--------------------------------------------------------------------
-%% @doc
-%% Starts the server
-%%
-%% @spec start_link() -> {ok, Pid} | ignore | {error, Error}
+%% @doc create new user.
 %% @end
 %%--------------------------------------------------------------------
-start_link() ->
-    gen_server:start_link(?MODULE, [], []).
-
-%%%===================================================================
-%%% gen_server callbacks
-%%%===================================================================
+-spec create(Name, LongName, Mail, Password, IconUrl, Description) -> 
+                    {ok, Usr} | {error, Reason} when
+      Name :: binary(),
+      LongName :: binary(),
+      Mail :: binary(),
+      Password :: binary(),
+      IconUrl :: binary(),
+      Description :: binary(),
+      Usr :: #usr{},
+      Reason :: atom().
+create(Name, LongName, Mail, Password, IconUrl, Description) ->
+    case hivespark_usr_db:lookup_name(Name) of
+        {ok, _Usr} ->
+            {error, already_exist};
+        {error, not_found} ->
+            hivespark_usr_db:insert(Name, LongName, Mail, Password, 
+                                    IconUrl, Description)
+    end.
 
 %%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Initializes the server
-%%
-%% @spec init(Args) -> {ok, State} |
-%%                     {ok, State, Timeout} |
-%%                     ignore |
-%%                     {stop, Reason}
+%% @doc delete user.
 %% @end
 %%--------------------------------------------------------------------
-init([]) ->
-    {ok, #state{}}.
+-spec delete(UsrId) -> {ok, deleted} | {error, not_found} when
+      UsrId :: integer() | string() | binary().
+delete(UsrId) ->
+    case hivespark_usr_db:lookup_id(UsrId) of
+        {error, not_found} ->
+            {error, not_found};
+        {ok, _Usr} ->
+            hivespark_usr_cache:delete(UsrId),
+            {ok, deleted} = hivespark_usr_db:delete(UsrId),
+            {ok, deleted}
+    end.
 
 %%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Handling call messages
-%%
-%% @spec handle_call(Request, From, State) ->
-%%                                   {reply, Reply, State} |
-%%                                   {reply, Reply, State, Timeout} |
-%%                                   {noreply, State} |
-%%                                   {noreply, State, Timeout} |
-%%                                   {stop, Reason, Reply, State} |
-%%                                   {stop, Reason, State}
+%% @doc lookup user by id.
 %% @end
 %%--------------------------------------------------------------------
-handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+-spec lookup_id(UsrId) -> {ok, Usr} | {error, not_found} when
+      UsrId :: integer() | list() | binary(),
+      Usr :: #usr{}.
+lookup_id(UsrId) ->
+    case hivespark_usr_cache:lookup_id(UsrId) of
+        {ok, Usr} -> {ok, Usr};
+        {error, not_found} ->
+            case hivespark_usr_db:lookup_id(UsrId) of
+                {error, not_found} -> {error, not_found};
+                {ok, Usr} -> 
+                    hivespark_usr_cache:store(Usr),
+                    {ok, Usr}
+            end
+    end.
 
 %%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Handling cast messages
-%%
-%% @spec handle_cast(Msg, State) -> {noreply, State} |
-%%                                  {noreply, State, Timeout} |
-%%                                  {stop, Reason, State}
+%% @doc lookup user by name.
 %% @end
 %%--------------------------------------------------------------------
-handle_cast(_Msg, State) ->
-    {noreply, State}.
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Handling all non call/cast messages
-%%
-%% @spec handle_info(Info, State) -> {noreply, State} |
-%%                                   {noreply, State, Timeout} |
-%%                                   {stop, Reason, State}
-%% @end
-%%--------------------------------------------------------------------
-handle_info(_Info, State) ->
-    {noreply, State}.
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% This function is called by a gen_server when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any
-%% necessary cleaning up. When it returns, the gen_server terminates
-%% with Reason. The return value is ignored.
-%%
-%% @spec terminate(Reason, State) -> void()
-%% @end
-%%--------------------------------------------------------------------
-terminate(_Reason, _State) ->
-    ok.
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Convert process state when code is changed
-%%
-%% @spec code_change(OldVsn, State, Extra) -> {ok, NewState}
-%% @end
-%%--------------------------------------------------------------------
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
+-spec lookup_name(Name) -> {ok, Usr} | {error, not_found} when
+      Name :: string(),
+      Usr :: #usr{}.
+lookup_name(Name) ->
+    case hivespark_usr_cache:lookup_name(Name) of
+        {ok, Usr} -> {ok, Usr};
+        {error, not_found} ->
+            case hivespark_usr_db:lookup_name(Name) of
+                {error, not_found} -> {error, not_found};
+                {ok, Usr} -> 
+                    hivespark_usr_cache:store(Usr),
+                    {ok, Usr}
+            end
+    end.
 
 %%%===================================================================
 %%% Internal functions

@@ -13,11 +13,8 @@
 -include("hivespark.hrl").
 
 %% API
--export([list/1, insert/6, lookup_id/1, lookup_name/1, update/7, delete/1]).
-
--define(MaxIdKey, <<"max_usr_id">>).
--define(USR_DB, <<"usr_db">>).
--define(USR_NAME_INDEX_KEY, <<"usr_name_index">>).
+-export([q/1, q/2, 
+         list/1, insert/6, lookup_id/1, lookup_name/1, update/1, delete/1]).
 
 -define(KEY_PHRASE_1, "message_box3").
 -define(KEY_PHRASE_2, "SHIMANE").
@@ -28,31 +25,53 @@
 %%%===================================================================
 
 %%--------------------------------------------------------------------
+%% @doc exec sql query.
+%% @end
+%%--------------------------------------------------------------------
+-spec q(Sql) -> ok | {ok, [#usr{}]} | {error, Reason} when
+      Sql :: string(),
+      Reason :: tuple().
+q(Sql) -> q(Sql, []).
+
+-spec q(Sql, Params) -> ok | {ok, [#usr{}]} | {error, Reason} when
+      Sql :: string(),
+      Params :: [any()],
+      Reason :: tuple().
+q(Sql, Params) ->
+    case postgres_pool:equery(?DB, Sql, Params) of
+        {ok, Columns, Values} -> 
+            {ok, parse_result(Columns, Values, [])};
+        {ok, _Count} -> 
+            ok;
+        {ok, _Count, Columns, Values} -> 
+            {ok, parse_result(Columns, Values, [])};
+        {error, Reason} -> {error, Reason}
+    end.           
+
+%%--------------------------------------------------------------------
 %% @doc get usr list from user id list.
 %% @end
 %%--------------------------------------------------------------------
--spec list(UsrIdList) -> UsrList when
+-spec list(UsrIdList) -> {ok, UsrList} when
       UsrIdList :: [integer() | string() | binary()],
-      UsrList :: [#usr{} | undefined].
-list([]) -> [];
+      UsrList :: [] | [#usr{}].
+list([]) -> {ok, []};
 
 list([UsrId | _] = UsrIdList) when is_integer(UsrId) ->
     list(lists:map(fun(Id) -> list_to_binary(integer_to_list(Id)) end, 
                    UsrIdList));
 
-list([UsrId | _] = UsrIdList) when is_list(UsrId) ->
-    list(lists:map(fun(Id) -> list_to_binary(Id) end, UsrIdList));
-
 list([UsrId | _] = UsrIdList) when is_binary(UsrId) ->
-    {ok, List} = eredis_pool:q(?DB_SRV, ["HMGET", ?USR_DB | UsrIdList]),
-    Fun = fun(UsrBin, Results) ->
-                  case UsrBin of
-                      undefined -> [undefined | Results];
-                      UsrBin -> [binary_to_term(UsrBin) | Results]
-                  end
-          end,
+    list(lists:map(fun(Id) -> binary_to_list(Id) end, 
+                   UsrIdList));
 
-    lists:reverse(lists:foldl(Fun, [], List)).
+list([UsrId | _] = UsrIdList) when is_list(UsrId) ->
+    Sql = lists:flatten(io_lib:format("select * from usrs where id in (~s)",
+                                      [string:join(UsrIdList, ",")])),
+    case q(Sql) of
+        {ok, Records} -> {ok, Records};
+        {error, Reason} -> {error, Reason}
+    end.
 
 %%--------------------------------------------------------------------
 %% @doc insert new usr to database.
@@ -69,168 +88,177 @@ list([UsrId | _] = UsrIdList) when is_binary(UsrId) ->
       Usr :: #usr{},
       Reason :: atom().
 insert(Name, LongName, Mail, Password, IconUrl, Description) ->
-    case lookup_name(Name) of
-        {ok, _} -> {error, already_exist};
-        {error, not_found} ->
-            UsrId = get_next_id(),
-            Usr1 = #usr{id = UsrId, name = Name, longname = LongName,
-                        password = Password, email = Mail,
-                        description = Description,
-                        icon_url = IconUrl,
-                        created_at = {date(), time()}},
-            
-            CryptedPassword = create_crypted_password(Usr1, Password),
-            Usr2 = Usr1#usr{password = CryptedPassword},
-            
-            case eredis_pool:q(?DB_SRV, 
-                               ["HSET", ?USR_DB, UsrId, term_to_binary(Usr2)]) of
-                {ok, _} ->
-                    case add_user_name_index(UsrId, Name) of
-                        ok -> {ok, Usr2};
-                        _ -> {error, index_save_error} %% todo 後始末
-                    end;
-                Other -> Other
-            end
-    end.
+    CreatedAt = {date(), time()},
+    Seed = create_password_seed(Name, Mail, CreatedAt, Password),
+    CryptedPassword = create_crypted_password(Password, Seed),
 
+    Result = q("insert into usrs (name, longname, email, 
+                                  password, password_seed, icon_url, 
+                                  description, created_at)
+                  values($1, $2, $3, $4, $5, $6, $7, $8)
+                  returning *",
+               [Name, LongName, Mail, CryptedPassword, Seed, IconUrl, 
+                Description, CreatedAt]),
+
+    case Result of
+        {ok, [Record]} -> {ok, Record};
+        {ok, []} -> {error, empty_result};
+        {error, Reason} -> {error, Reason}
+    end.
+            
 %%--------------------------------------------------------------------
 %% @doc lookup user by id.
 %% @end
 %%--------------------------------------------------------------------
--spec lookup_id(UsrId) -> {ok, Usr} | {error, not_found} when
+-spec lookup_id(UsrId) -> {ok, Usr} | {error, not_found} |{error, Reason} when
       UsrId :: integer() | list() | binary(),
-      Usr :: #usr{}.
-lookup_id(UsrId) when is_integer(UsrId) -> lookup_id(integer_to_list(UsrId));
-lookup_id(UsrId) when is_list(UsrId) -> lookup_id(list_to_binary(UsrId));
-lookup_id(UsrId) ->
-    case eredis_pool:q(?DB_SRV, ["HGET", ?USR_DB, UsrId]) of
-        {ok, undefined} -> {error, not_found};
-        {ok, Usr} -> {ok, binary_to_term(Usr)}
-    end.
+      Usr :: #usr{},
+      Reason :: tuple().
+lookup_id(UsrId) when is_binary(UsrId) -> lookup_id(binary_to_list(UsrId));
+lookup_id(UsrId) when is_list(UsrId) -> lookup_id(list_to_integer(UsrId));
+lookup_id(UsrId) when is_integer(UsrId) -> 
+    case q("select * from usrs where id = $1", [UsrId]) of
+        {ok, [Record]} -> {ok, Record};
+        {ok, []} -> {error, not_found};
+        {error, Reason} -> {error, Reason}
+    end.        
 
 %%--------------------------------------------------------------------
 %% @doc lookup user by name.
 %% @end
 %%--------------------------------------------------------------------
--spec lookup_name(Name) -> {ok, Usr} | {error, not_found} when
+-spec lookup_name(Name) -> {ok, Usr} | {error, not_found} | {error, Reason} when
       Name :: string(),
-      Usr :: #usr{}.
-lookup_name(Name) when is_list(Name) -> lookup_name(list_to_binary(Name));
-lookup_name(Name) when is_binary(Name) ->
-    case eredis_pool:q(?DB_SRV, ["HGET", ?USR_NAME_INDEX_KEY, Name]) of
-        {ok, undefined} -> {error, not_found};
-        {ok, UsrId} -> lookup_id(UsrId)
-    end.
-
+      Usr :: #usr{},
+      Reason :: tuple().
+lookup_name(Name) when is_binary(Name) or is_list(Name) ->
+    case q("select * from usrs where name = $1", [Name]) of
+        {ok, [Record]} -> {ok, Record};
+        {ok, []} -> {error, not_found};
+        {error, Reason} -> {error, Reason}
+    end.        
 
 %%--------------------------------------------------------------------
 %% @doc update user parameter.
 %% @end
 %%--------------------------------------------------------------------
--spec update(UsrId, Name, LongName, Mail, Password, IconUrl, Description) -> 
-                    {ok, Usr} | {error, Reason} when
-      UsrId :: integer(),
-      Name :: binary(), 
-      LongName :: binary(),
-      Mail :: binary(),
-      Password :: binary(),
-      IconUrl :: binary(),
-      Description :: binary(),
+-spec update(Usr) -> {ok, UpdatedUsr} | {error, Reason} when
       Usr :: #usr{},
+      UpdatedUsr :: #usr{},
       Reason :: atom().
-update(UsrId, Name, LongName, Mail, Password, IconUrl, Description) ->
-    case lookup_id(UsrId) of
-        {error, not_found} -> {error, not_found};
-        {ok, Usr} ->
-            Usr1 = Usr#usr{name = Name,
-                           longname = LongName,
-                           email = Mail,
-                           icon_url = IconUrl,
-                           description = Description},
-            Usr2 = case Password of
-                       <<"">> -> 
-                           Usr1;
-                       Password1 ->
-                           Crypted = create_crypted_password(Usr1, Password1),
-                           Usr1#usr{password = Crypted}
-                   end,
+update(Usr) ->
+    Result = q("update usrs set name = $2,
+                                longname = $3,
+                                email = $4,
+                                icon_url = $5,
+                                description = $6,
+                                lat = $7,
+                                lng = $8
+                  where id = $1
+                  returning *",
+              [Usr#usr.id, Usr#usr.name, Usr#usr.longname, Usr#usr.email,
+               Usr#usr.icon_url, Usr#usr.description, Usr#usr.lat, 
+               Usr#usr.lng]),
 
-            Result = eredis_pool:q(?DB_SRV, ["HSET", ?USR_DB, 
-                                             UsrId, term_to_binary(Usr2)]),
-            
-            case  Result of
-                {ok, _} -> {ok, Usr2};
-                Other -> Other
-            end
+    case Result of
+        {ok, [Record]} -> Record;
+        {ok, []} -> {error, empty_result};
+        {error, Reason} -> {error, Reason}
     end.
 
 %%--------------------------------------------------------------------
 %% @doc delete usr from database.
 %% @end
 %%--------------------------------------------------------------------
--spec delete(UsrId) -> {ok, deleted} | {error, not_found} when
-      UsrId :: integer() | string() | binary().
-delete(UsrId) when is_integer(UsrId) -> delete(integer_to_list(UsrId));
-delete(UsrId) when is_list(UsrId) -> delete(list_to_binary(UsrId));
-delete(UsrId) when is_binary(UsrId) ->
-    case lookup_id(UsrId) of
-        {error, not_found} -> {error, not_found};
-        {ok, Usr} ->
-            case eredis_pool:q(?DB_SRV, ["HDEL", ?USR_DB, UsrId]) of
-                {ok, <<"0">>} -> {error, not_found};
-                {ok, <<"1">>} ->
-                    eredis_pool:q(?DB_SRV, 
-                                  ["HDEL", ?USR_NAME_INDEX_KEY, Usr#usr.name]),
-                    {ok, deleted}
-            end
-    end.
+-spec delete(UsrId) -> {ok, deleted} | {error, Reason} when
+      UsrId :: integer() | string() | binary(),
+      Reason :: tuple().
+delete(UsrId) when is_binary(UsrId) -> delete(binary_to_list(UsrId));
+delete(UsrId) when is_list(UsrId) -> delete(list_to_integer(UsrId));
+delete(UsrId) when is_integer(UsrId) ->
+    case q("delete from usrs where id = $1", [UsrId]) of
+        ok -> {ok, deleted};
+        {error, Reason} -> {error, Reason}
+    end.     
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 
--spec get_next_id() -> NextId when
-      NextId ::integer().
-get_next_id() ->
-    {ok, NextIdBin} = eredis_pool:q(?DB_SRV, ["INCR", ?MaxIdKey]),
-    list_to_integer(binary_to_list(NextIdBin)).
-
--spec add_user_name_index(UsrId, Name) -> ok | Error when
-      UsrId :: integer(),
-      Name :: string(),
-      Error :: tuple().
-add_user_name_index(UsrId, Name) ->
-    case eredis_pool:q(?DB_SRV, ["HSET", ?USR_NAME_INDEX_KEY, Name, UsrId]) of
-        {ok, _} -> ok;
-        Error -> Error
-    end.
-
 %%--------------------------------------------------------------------
 %% @doc create crypted password.
 %% @end
 %%--------------------------------------------------------------------
--spec create_crypted_password(Usr, Password) -> CryptedPassword when
-      Usr::#usr{},
-      Password::binary(),
-      CryptedPassword::string().
+-spec create_password_seed(Name, Mail, CreatedAt, Password) -> Seed when
+      Name :: binary(),
+      Mail :: binary(),
+      CreatedAt :: tuple(),
+      Password :: binary(),
+      Seed :: string().
+create_password_seed(Name, Mail, CreatedAt, Password) 
+  when is_binary(Password)->
 
-create_crypted_password(Usr, Password) when is_binary(Password)->
-
-    {{Year, Month, Day}, {Hour, Min, Sec}} = Usr#usr.created_at,
+{{Year, Month, Day}, {Hour, Min, Sec}} = CreatedAt,
 
     TimeStr = integer_to_list(Year) ++ integer_to_list(Month) ++
         integer_to_list(Day) ++ integer_to_list(Hour) ++
         integer_to_list(Min) ++ integer_to_list(Sec),
 
-    CryptedPassword = crypto:sha([TimeStr, 
-                                  binary_to_list(Usr#usr.name),
-                                  binary_to_list(Usr#usr.email),
-                                  ?KEY_PHRASE_1,
-                                  ?KEY_PHRASE_2,
-                                  ?KEY_PHRASE_3,
-                                  binary_to_list(Password)]),
+    SeedBin = crypto:sha([TimeStr, 
+                          binary_to_list(Name),
+                          binary_to_list(Mail),
+                          ?KEY_PHRASE_1,
+                          ?KEY_PHRASE_2,
+                          ?KEY_PHRASE_3,
+                          binary_to_list(Password)]),
 
-    lists:flatten(lists:map(fun(X) -> 
-                                    io_lib:format("~.16X", [X, ""]) 
-                            end, 
-                            binary_to_list(CryptedPassword))).
+    S = lists:flatten(lists:map(fun(X) -> io_lib:format("~.16X", [X, ""]) end, 
+                                binary_to_list(SeedBin))),
+    string:substr(S, 1, 32).
+
+-spec create_crypted_password(Password, Seed) -> CryptedPassword when
+      Password :: binary(),
+      Seed :: string(),
+      CryptedPassword :: string().
+create_crypted_password(Password, Seed) ->
+    Bin = crypto:sha([binary_to_list(Password), Seed]),
+    P = lists:flatten(lists:map(fun(X) -> io_lib:format("~.16X", [X, ""]) end, 
+                                binary_to_list(Bin))),
+    string:substr(P, 1, 32).
+    
+
+%%--------------------------------------------------------------------
+%% @doc sql query result parser.
+%% @end
+%%--------------------------------------------------------------------
+-spec parse_result(Columns, Records, []) -> ParsedResults when
+      Columns :: [tuple()],
+      Records :: [tuple()],
+      ParsedResults :: [tuple()].
+parse_result(_Columns, [], Results) -> lists:reverse(Results);
+parse_result(Columns, [DBRecord | RTail], Results) ->
+    Record = parse_record(Columns, tuple_to_list(DBRecord), #usr{}),
+    parse_result(Columns, RTail, [Record | Results]).
+
+-spec parse_record(Columns, Values, EmptyRecord) -> Record when
+      Columns :: [tuple()],
+      Values :: [tuple()],
+      EmptyRecord :: #usr{},
+      Record :: #usr{}.
+parse_record([], [], Result) -> Result;
+parse_record([Column | CTail], [Value | VTail], Result) ->
+    {column, Name, _, _, _, _} = Column,
+    Result1 = case Name of
+                  <<"id">> -> Result#usr{id = Value};
+                  <<"name">> -> Result#usr{name = Value};
+                  <<"longname">> -> Result#usr{longname = Value};
+                  <<"email">> -> Result#usr{email = Value};
+                  <<"password">> -> Result#usr{password = Value};
+                  <<"password_seed">> -> Result#usr{password_seed = Value};
+                  <<"icon_url">> -> Result#usr{icon_url = Value};
+                  <<"description">> -> Result#usr{description = Value};
+                  <<"created_at">> -> Result#usr{created_at = Value};
+                  <<"lat">> -> Result#usr{lat = Value};
+                  <<"lng">> -> Result#usr{lng = Value}
+              end,
+    parse_record(CTail, VTail, Result1).

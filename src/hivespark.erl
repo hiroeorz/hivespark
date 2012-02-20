@@ -20,7 +20,7 @@
 %%%===================================================================
 
 start() ->
-    application:start(emysql),
+    application:start(postgres_pool),
     application:start(eredis_pool),
     application:start(cowboy),
     application:start(hivespark),
