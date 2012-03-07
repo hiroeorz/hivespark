@@ -6,11 +6,12 @@
 %%% @end
 %%% Created : 17 Feb 2012 by Hiroe Shin <shin@sy11.komatsuelec.co.jp>
 %%%-------------------------------------------------------------------
--module(hivespark_websocket_handler).
+-module(hs_websocket_handler).
 -behaviour(cowboy_http_websocket_handler).
 
 %% Include
 -include_lib("eunit/include/eunit.hrl").
+-include("hivespark.hrl").
 
 %% API
 -export([init/3, terminate/2]).
@@ -38,7 +39,7 @@ terminate(_Req, _State) ->
 websocket_init(_Any, Req, []) ->
     timer:send_interval(60000, tick),
     Req2 = cowboy_http_req:compact(Req),
-    {ok, Req2, undefined, hibernate}.
+    {ok, Req2, #http_state{}, hibernate}.
 
 websocket_info(tick, Req, State) ->
     {reply, {text, <<"Tick">>}, Req, State, hibernate};
@@ -54,6 +55,7 @@ websocket_terminate(_Reason, _Req, _State) ->
 %%%===================================================================
 
 websocket_handle({text, Msg}, Req, State) ->
+    ?debugVal(Msg),
     case jiffy:decode(Msg) of
         {ParamList} ->
             Controller = get_value(<<"controller">>, ParamList),
@@ -70,18 +72,49 @@ websocket_handle(_Any, Req, State) ->
 %%%===================================================================
 %%% @doc Handler
 %%%===================================================================
-
-handle(<<"chat">>, <<"init">>, _ParamList, Req, State) ->
-    Json = jiffy:encode({[{status, <<"accepted">>}, 
-                          {message, <<"server accepted!">>}]}),
+-spec handle(Controller, Action, ParamList, Req, State) -> 
+                    {reply, {text, Json}, Req, NewState, hibernate} when
+      Controller :: binary(),
+      Action :: binary(),
+      ParamList :: [tuple()],
+      Req :: tuple(),
+      State :: tuple(),
+      NewState :: tuple(),
+      Json :: binary().
+handle(<<"socket">>, <<"init">>, _ParamList, Req, State) ->
+    Json = jiffy:encode({[{<<"controller">>, <<"socket_handler">>}, 
+                          {<<"action">>, <<"opened">>},
+                          {<<"status">>, <<"accepted">>}, 
+                          {<<"message">>, <<"接続完了">>}]}),
     {reply, {text, Json}, Req, State, hibernate};
 
-handle(<<"message">>, <<"send">>, ParamList, Req, State) ->
-    TextBin = get_value(<<"text">>, ParamList),
-    RepText = lists:flatten(["sent: ", binary_to_list(TextBin)]),
-    Json = jiffy:encode({[{status, true}, {message, list_to_binary(RepText)}]}),
+handle(C, A, ParamList, Req, State) when ?AUTHENTICATED_ROUTE ->
+    UsrId = proplists:get_value(<<"usr_id">>, ParamList),
+    SessionKey = proplists:get_value(<<"session_key">>, ParamList),
+    Loggedin = hs_session:check_loggedin(UsrId, SessionKey),
+
+    case Loggedin of
+        true -> 
+            M = list_to_atom(lists:flatten([binary_to_list(C), "_controller"])),
+            F = list_to_atom(binary_to_list(A)),
+            {_, Bin} = M:F(ParamList, Req, State, SessionKey),
+            {reply, {text, Bin}, Req, State, hibernate};
+        false ->
+            Json = jiffy:encode({[{status, <<"not_authenticated">>}]}),
+            {reply, {text, Json}, Req, State, hibernate}
+    end;
+
+handle(C, A, ParamList, Req, State) when ?ROUTE ->
+    M = list_to_atom(lists:flatten([binary_to_list(C), "_controller"])),
+    F = list_to_atom(binary_to_list(A)),
+    {_, _, Bin} = M:F(ParamList, Req, State),
+    {reply, {text, Bin}, Req, State, hibernate};
+
+handle(C, A, _, Req, State) ->
+    io:format("invalid route ~p:~p", [C, A]),
+    Json = jiffy:encode({[{result, <<"error">>}, {reason, <<"not found">>}]}),
     {reply, {text, Json}, Req, State, hibernate}.
-    
+
 
 %%%===================================================================
 %%% Internal functions

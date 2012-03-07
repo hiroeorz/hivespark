@@ -4,9 +4,9 @@
 %%% @doc
 %%%
 %%% @end
-%%% Created : 20 Feb 2012 by Hiroe Shin <shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net>
+%%% Created : 21 Feb 2012 by Hiroe Shin <shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net>
 %%%-------------------------------------------------------------------
--module(hivespark_team).
+-module(hs_session).
 
 -behaviour(gen_server).
 
@@ -15,124 +15,120 @@
 -include("hivespark.hrl").
 
 %% API
--export([create/3, delete/1, lookup_id/1, lookup_name/1]).
--export([start_child/1, start_link/1]).
+-export([start_link/0]).
 
 %% gen_server callbacks
+-export([create/1, get_value/2, set_value/3, del_value/2, get_usr/1, check_loggedin/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
 -define(SERVER, ?MODULE). 
+-define(SESSION_KEY_HEADER, "_hs_session_").
 
--record(state, {id :: integer()}).
+-record(state, {}).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 
 %%--------------------------------------------------------------------
-%% @doc create new user.
-%% @end
-%%--------------------------------------------------------------------
--spec create(Name, IconUrl, Description) -> {ok, Team} | {error, Reason} when
-      Name :: binary(),
-      IconUrl :: binary(),
-      Description :: binary(),
-      Team :: #team{},
-      Reason :: atom().
-create(Name, IconUrl, Description) ->
-    case hivespark_team_db:lookup_name(Name) of
-        {ok, _Team} ->
-            {error, already_exist};
-        {error, not_found} ->
-            hivespark_team_db:insert(Name, IconUrl, Description)
-    end.
-
-%%--------------------------------------------------------------------
-%% @doc delete user.
-%% @end
-%%--------------------------------------------------------------------
--spec delete(TeamId) -> {ok, deleted} | {error, not_found} when
-      TeamId :: integer() | string() | binary().
-delete(TeamId) ->
-    case hivespark_team_db:lookup_id(TeamId) of
-        {error, not_found} ->
-            {error, not_found};
-        {ok, _Team} ->
-            hivespark_team_cache:delete(TeamId),
-            {ok, deleted} = hivespark_team_db:delete(TeamId),
-            {ok, deleted}
-    end.
-
-%%--------------------------------------------------------------------
-%% @doc lookup user by id.
-%% @end
-%%--------------------------------------------------------------------
--spec lookup_id(TeamId) -> {ok, Team} | {error, not_found} when
-      TeamId :: integer() | list() | binary(),
-      Team :: #team{}.
-lookup_id(TeamId) ->
-    case hivespark_team_cache:lookup_id(TeamId) of
-        {ok, Team} -> {ok, Team};
-        {error, not_found} ->
-            case hivespark_team_db:lookup_id(TeamId) of
-                {error, not_found} -> {error, not_found};
-                {ok, Team} -> 
-                    hivespark_team_cache:store(Team),
-                    {ok, Team}
-            end
-    end.
-
-%%--------------------------------------------------------------------
-%% @doc lookup user by name.
-%% @end
-%%--------------------------------------------------------------------
--spec lookup_name(Name) -> {ok, Team} | {error, not_found} when
-      Name :: string(),
-      Team :: #team{}.
-lookup_name(Name) ->
-    case hivespark_team_cache:lookup_name(Name) of
-        {ok, Team} -> {ok, Team};
-        {error, not_found} ->
-            case hivespark_team_db:lookup_name(Name) of
-                {error, not_found} -> {error, not_found};
-                {ok, Team} -> 
-                    hivespark_team_cache:store(Team),
-                    {ok, Team}
-            end
-    end.
-
-%%--------------------------------------------------------------------
-%% @doc
-%% Starts the server under the supervisor.
-%% @end
-%%--------------------------------------------------------------------
--spec start_child(TeamId) -> {ok, Pid} | {error, Reason} when
-      TeamId :: integer(),
-      Pid :: pid(),
-      Reason :: atom().
-start_child(TeamId) ->
-    case lookup_id(TeamId) of
-        {error, Reason} -> {error, Reason};
-        {ok, _Team} -> 
-            supervisor:start_child(hivespark_team_sup,
-                                   {hivespark_team_sup, 
-                                    {hivespark_team, start_link, [TeamId]},
-                                    permanent, 5000, worker, 
-                                    [hivespark_team_sup, hivespark_team]})
-    end.
-
-%%--------------------------------------------------------------------
 %% @doc
 %% Starts the server
+%%
+%% @spec start_link() -> {ok, Pid} | ignore | {error, Error}
 %% @end
 %%--------------------------------------------------------------------
--spec start_link(TeamId) -> {ok, Pid} | ignore | {error, Error} when
-      TeamId :: integer(),
-      Pid :: pid(),
-      Error :: atom().
-start_link(TeamId) ->
-    gen_server:start_link(?MODULE, [TeamId], []).
+start_link() ->
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+
+%%--------------------------------------------------------------------
+%% @doc get session value from key.
+%% @end
+%%--------------------------------------------------------------------
+-spec get_value(SessionKey, Key) -> {ok, Val} | {error, not_found} when
+      SessionKey :: binary(),
+      Key :: string() | binary() | integer(),
+      Val :: binary().
+get_value(SessionKey, Key) ->
+    case eredis_pool:q(?DB_SRV, ["HGET", SessionKey, Key]) of
+        {ok, undefined} -> {error, not_found};
+        {ok, Val} -> {ok, Val}
+    end.
+
+%%--------------------------------------------------------------------
+%% @doc set session value with key.
+%% @end
+%%--------------------------------------------------------------------
+-spec set_value(SessionKey, Key, Val) -> ok when
+      SessionKey :: binary(),
+      Key :: string() | binary() | integer(),
+      Val :: binary() | string() | integer().
+set_value(SessionKey, Key, Val) ->
+    case eredis_pool:q(?DB_SRV, ["HSET", SessionKey, Key, Val]) of
+        {ok, _} -> ok;
+        Else -> {error, Else}
+    end.
+
+%%--------------------------------------------------------------------
+%% @doc delete session value with key.
+%% @end
+%%--------------------------------------------------------------------
+-spec del_value(SessionKey, Key) -> ok when
+      SessionKey :: binary(),
+      Key :: string() | binary() | integer().
+del_value(SessionKey, Key) ->
+    case eredis_pool:q(?DB_SRV, ["HDEL", SessionKey, Key]) of
+        {ok, _} -> ok;
+        Else -> {error, Else}
+    end.
+
+%%--------------------------------------------------------------------
+%% @doc get usr record.
+%% @end
+%%--------------------------------------------------------------------
+-spec get_usr(SessionKey) -> Usr | undefined when
+      SessionKey :: binary(),
+      Usr :: #usr{}.
+get_usr(SessionKey) ->
+    case get_value(SessionKey, <<"usr_id">>) of
+        {error, _} -> undefined;
+        {ok, UsrId} -> 
+            case hs_usr:lookup_id(UsrId) of
+                {error, not_found} -> undefined;
+                {ok, Usr} -> Usr
+            end
+    end.
+
+%%--------------------------------------------------------------------
+%% @doc check already loggedin user?
+%% @end
+%%--------------------------------------------------------------------
+-spec check_loggedin(UsrId, SessionKey) -> true | false when
+      UsrId :: binary() | integer(),
+      SessionKey :: binary().
+check_loggedin(UsrId, SessionKey) when is_integer(UsrId) ->
+    check_loggedin(list_to_binary(integer_to_list(UsrId)), SessionKey);
+
+check_loggedin(UsrId, SessionKey) when is_binary(UsrId) ->
+    case get_value(SessionKey, <<"usr_id">>) of
+        undefined -> false;
+        {ok, UsrIdFromSession} ->
+            case UsrIdFromSession of
+                UsrId -> true;
+                _ -> false
+            end
+    end.
+
+%%--------------------------------------------------------------------
+%% @doc ceate new session, and return session key.
+%% @end
+%%--------------------------------------------------------------------
+-spec create(Usr) -> {ok, SessionKey} |  {error, already_exist} | {error, Else} when
+      Usr :: #usr{},
+      SessionKey :: binary(),
+      Else :: tuple().
+create(Usr) ->
+    gen_server:call(?SERVER, {create, Usr}).
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -149,8 +145,8 @@ start_link(TeamId) ->
 %%                     {stop, Reason}
 %% @end
 %%--------------------------------------------------------------------
-init([TeamId]) ->
-    {ok, #state{id = TeamId}}.
+init([]) ->
+    {ok, #state{}}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -166,6 +162,22 @@ init([TeamId]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+handle_call({create, Usr}, _From, State) ->
+    SessionKey = create_session_key(Usr),
+
+    Reply =  case get_value(SessionKey, <<"usr_id">>) of
+                 {ok, _} -> {error, already_exist};
+                 {error, not_found} ->
+                     Result = eredis_pool:q(?DB_SRV, 
+                                            ["HSET", SessionKey, <<"usr_id">>, Usr#usr.id]), 
+                     case Result of
+                         {ok, _} -> {ok, SessionKey};
+                         Else -> {error, Else}
+                     end
+             end,
+
+    {reply, Reply, State};
+
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -224,3 +236,26 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+-spec create_session_key(Usr) -> SessionKey when
+      Usr :: #usr{},
+      SessionKey :: binary().
+create_session_key(Usr) ->
+    {{Year, Month, Day}, {Hour, Min, Sec}} = Usr#usr.created_at,
+    {{YearNow, MonthNow, DayNow}, {HourNow, MinNow, SecNow}} = {date(), time()},
+
+    TimeStr = integer_to_list(Year) ++ integer_to_list(Month) ++
+        integer_to_list(Day) ++ integer_to_list(Hour) ++
+        integer_to_list(Min) ++ float_to_list(Sec),
+    
+    TimeNowStr = integer_to_list(YearNow) ++ integer_to_list(MonthNow) ++
+        integer_to_list(DayNow) ++ integer_to_list(HourNow) ++
+        integer_to_list(MinNow) ++ integer_to_list(SecNow),
+    
+    SessionKeyBin = crypto:sha([TimeStr, TimeNowStr,
+                                binary_to_list(Usr#usr.name),
+                                binary_to_list(Usr#usr.email)]),
+    
+    S = lists:flatten(lists:map(fun(X) -> io_lib:format("~.16X", [X, ""]) end, 
+                                binary_to_list(SessionKeyBin))),
+    list_to_binary(?SESSION_KEY_HEADER ++ string:substr(S, 1, 32)).

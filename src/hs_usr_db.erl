@@ -6,7 +6,7 @@
 %%% @end
 %%% Created : 18 Feb 2012 by Hiroe Shin <shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net>
 %%%-------------------------------------------------------------------
--module(hivespark_usr_db).
+-module(hs_usr_db).
 
 %% Include
 -include_lib("eunit/include/eunit.hrl").
@@ -14,7 +14,8 @@
 
 %% API
 -export([q/1, q/2, 
-         list/1, insert/6, lookup_id/1, lookup_name/1, update/1, delete/1]).
+         list/1, insert/6, lookup_id/1, lookup_name/1, update/1, delete/1, authenticate/2,
+         add_team/2, delete_team/2, get_team_id_list/1]).
 
 -define(KEY_PHRASE_1, "message_box3").
 -define(KEY_PHRASE_2, "SHIMANE").
@@ -28,7 +29,7 @@
 %% @doc exec sql query.
 %% @end
 %%--------------------------------------------------------------------
--spec q(Sql) -> ok | {ok, [#usr{}]} | {error, Reason} when
+-spec q(Sql) -> ok | {ok, list()} | {error, Reason} when
       Sql :: string(),
       Reason :: tuple().
 q(Sql) -> q(Sql, []).
@@ -105,7 +106,7 @@ insert(Name, LongName, Mail, Password, IconUrl, Description) ->
         {ok, []} -> {error, empty_result};
         {error, Reason} -> {error, Reason}
     end.
-            
+
 %%--------------------------------------------------------------------
 %% @doc lookup user by id.
 %% @end
@@ -181,6 +182,82 @@ delete(UsrId) when is_integer(UsrId) ->
         {error, Reason} -> {error, Reason}
     end.     
 
+%%--------------------------------------------------------------------
+%% @doc user authenticate.
+%% @end
+%%--------------------------------------------------------------------
+-spec authenticate(UsernameBin, PasswordBin) -> {ok, UsrId} | failure when
+      UsernameBin :: binary(),
+      PasswordBin :: binary(),
+      UsrId :: integer().
+authenticate(UsernameBin, PasswordBin) ->
+    Username = binary_to_list(UsernameBin),
+
+    case lookup_name(Username) of
+        {error, _} -> {error, not_found};
+        {ok, Usr} ->
+            Seed = Usr#usr.password_seed,
+            CryptedPassword = create_crypted_password(PasswordBin, Seed),
+            SavedPassword = binary_to_list(Usr#usr.password),
+
+            case CryptedPassword of
+                SavedPassword -> {ok, Usr#usr.id};
+                _ -> failure
+            end
+    end.
+
+%%--------------------------------------------------------------------
+%% @doc add usr's team relation.
+%% @end
+%%--------------------------------------------------------------------
+-spec add_team(UsrId, TeamId) -> ok | {error, already_exist} |  {error, missing_team_id} when
+      UsrId :: binary() | integer(),
+      TeamId :: binary() | integer().
+add_team(UsrId, TeamId) when is_binary(UsrId), is_binary(TeamId) ->
+    add_team(list_to_integer(binary_to_list(UsrId)), list_to_integer(binary_to_list(TeamId)));
+
+add_team(UsrId, TeamId) when is_integer(UsrId), is_integer(TeamId) ->
+    Result = hs_usr_team_db:q("select * from usrs_teams 
+                                        where usr_id = $1 and team_id = $2", 
+                                     [UsrId, TeamId]),
+    case Result of
+        {ok, [_]} -> {error, already_exist};
+        {ok, []} ->
+            Result1 = hs_team_db:q("select id from teams where id = $1", [TeamId]),
+
+            case Result1 of
+                {ok, []} -> {error, missing_team_id};
+                {ok, _} ->
+                    hs_usr_team_db:q("insert into usrs_teams values ($1, $2, $3)",
+                                            [UsrId, TeamId, {date(), time()}])
+            end
+    end.
+
+%%--------------------------------------------------------------------
+%% @doc delete usr's team relation.
+%% @end
+%%--------------------------------------------------------------------
+-spec delete_team(UsrId, TeamId) -> ok when
+      UsrId :: binary() | integer(),
+      TeamId :: binary() | integer().
+delete_team(UsrId, TeamId) ->
+    hs_usr_team_db:q("delete from usrs_teams where usr_id = $1 and team_id = $2", 
+                            [UsrId, TeamId]).
+    
+
+
+%%--------------------------------------------------------------------
+%% @doc get usr's team relation.
+%% @end
+%%--------------------------------------------------------------------
+-spec get_team_id_list(UsrId) -> [#team{}] when
+      UsrId :: integer() | binary().
+get_team_id_list(UsrId) ->
+    {ok, UsrsTeams} = hs_usr_team_db:q("select team_id from usrs_teams 
+                                                 where usr_id = $1 order by team_id desc", 
+                                              [UsrId]),
+    lists:map(fun(UsrTeam) -> UsrTeam#usr_team.team_id end, UsrsTeams).
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
@@ -198,7 +275,7 @@ delete(UsrId) when is_integer(UsrId) ->
 create_password_seed(Name, Mail, CreatedAt, Password) 
   when is_binary(Password)->
 
-{{Year, Month, Day}, {Hour, Min, Sec}} = CreatedAt,
+    {{Year, Month, Day}, {Hour, Min, Sec}} = CreatedAt,
 
     TimeStr = integer_to_list(Year) ++ integer_to_list(Month) ++
         integer_to_list(Day) ++ integer_to_list(Hour) ++

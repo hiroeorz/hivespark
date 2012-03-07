@@ -20,3 +20,9 @@ create table teams (
        description text not null default '',
        created_at timestamp,
        Constraint "teams_pkey" Primary Key("id"));
+
+create table usrs_teams (
+       usr_id integer not null,
+       team_id integer not null,
+       created_at timestamp,
+       Constraint "usr_id_team_id_pkey" Primary Key("usr_id", "team_id"));

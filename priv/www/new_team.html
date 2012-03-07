@@ -20,18 +20,17 @@ element {
 <script type="text/javascript">
     //<![CDATA[
       window.onload = function() {
-        socket_handler.open_callback = function(){team.list()}
         socket_handler.open_connection();
       }
 </script>
 
-<title>Hive Spark</title> 
+<title>HiveSpark</title> 
 </head> 
 <body> 
 <div id="top"> 
    <div id=status></div><div style="clear:both;"></div>
    <div id="header"> 
-      <h1 id="title">Hive Spark</h1> 
+      <h1 id="title">HiveSpark</h1> 
 
       <div id="navi"> 
          <ul> 
@@ -50,14 +49,31 @@ element {
 
    <div id="contents"> 
    
-      <h2>トップページ</h2> 
+      <h2>新規チーム登録</h2> 
+        <div>
+	  <div>
+	    <input type="hidden" name="_method" value="PUT" />
+	  </div>
+	  <div style="width:202px; margin:0 auto 0 auto;">
+	    <div class="login-form-top">
 
-      <a href="javascript:void(0)" onclick="team.list()">参加中チームを表示</a>
-      /<a href="javascript:void(0)" onclick="team.all()">全チームを表示</a>
+		<label>チーム名<br />
+		  <input type="text" 
+			 name="name" 
+			 value="" id="name" /></label><br />
+			 
+		<label>アイコンのURL<br />
+		  <input type="text" 
+			 name="icon_url" 
+			 value="" id="icon_url" /></label><br />
 
-      <div id="all-list">
-        <ul class="pola">
-        </ul>
+		<label>自己紹介<br />
+		  <textarea name="description" id="description"></textarea><br />
+	    </div>
+
+            <input type="submit" name="Submit" value="登録" id="Submit"
+                   onclick="team.create()" />
+	  </div>
       </div>
 
       <div id="participation">

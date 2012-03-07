@@ -28,8 +28,23 @@ start() ->
 
 start_http_listener() ->
     Dispatch = [{'_',[
-                      {[<<"websocket">>], hivespark_websocket_handler, []},
-                      {'_', hivespark_http_handler, []}
+                      {[<<"shared">>, '...'], cowboy_http_static,
+                       [
+                        {directory, <<"./priv/www">>},
+                        {mimetypes, [
+                                     {<<".html">>, [<<"text/html">>]},
+                                     {<<".css">>, [<<"text/css">>]},
+                                     {<<".js">>, [<<"application/javascript">>]},
+                                     {<<".txt">>, [<<"text/plain">>]},
+                                     {<<".jpg">>, [<<"image/jpeg">>]},
+                                     {<<".gif">>, [<<"image/gif">>]},
+                                     {<<".png">>, [<<"image/png">>]}
+                                    ]}
+                       ]
+                      },
+
+                      {[<<"websocket">>], hs_websocket_handler, []},
+                      {'_', hs_http_handler, []}
                      ]
                 }],
     cowboy:start_listener(http_listener, 100,

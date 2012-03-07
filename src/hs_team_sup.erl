@@ -6,7 +6,7 @@
 %%% @end
 %%% Created : 20 Feb 2012 by Hiroe Shin <shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net>
 %%%-------------------------------------------------------------------
--module(hivespark_team_sup).
+-module(hs_team_sup).
 
 -behaviour(supervisor).
 

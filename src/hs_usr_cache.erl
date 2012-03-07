@@ -6,18 +6,20 @@
 %%% @end
 %%% Created : 18 Feb 2012 by Hiroe Shin <shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net>
 %%%-------------------------------------------------------------------
--module(hivespark_usr_cache).
+-module(hs_usr_cache).
 
 %% Include
 -include_lib("eunit/include/eunit.hrl").
 -include("hivespark.hrl").
 
 %% API
--export([list/1, store/1, lookup_id/1, lookup_name/1, delete/1]).
+-export([list/1, store/1, lookup_id/1, lookup_name/1, delete/1, 
+         add_team_id_list/2, get_team_id_list/1, delete_team_id_list/1]).
 
 -define(MaxIdKey, <<"max_usr_id">>).
 -define(USR_DB, <<"usr_cache">>).
 -define(USR_NAME_INDEX_KEY, <<"usr_name_index">>).
+-define(USRS_TEAMS_KEY, <<"usrs_teams">>).
 
 -define(KEY_PHRASE_1, "message_box3").
 -define(KEY_PHRASE_2, "SHIMANE").
@@ -125,6 +127,48 @@ delete(UsrId) when is_binary(UsrId) ->
                     {ok, deleted}
             end
     end.
+    
+%%--------------------------------------------------------------------
+%% @doc set team id list to redis.
+%% @end
+%%--------------------------------------------------------------------
+-spec add_team_id_list(UsrId, TeamIds) -> ok when
+      UsrId :: integer() | binary(),
+      TeamIds :: [integer()].
+add_team_id_list(UsrId, TeamIds) when is_integer(UsrId) -> 
+    add_team_id_list(list_to_binary(integer_to_list(UsrId)), TeamIds);
+
+add_team_id_list(UsrId, TeamIds) when is_binary(UsrId) ->
+    case eredis_pool:q(?DB_SRV, ["HSET", ?USRS_TEAMS_KEY, UsrId, term_to_binary(TeamIds)]) of
+        {ok, _} -> ok;
+        Error -> Error
+    end.
+
+%%--------------------------------------------------------------------
+%% @doc get team id list from redis.
+%% @end
+%%--------------------------------------------------------------------
+-spec get_team_id_list(UserId) -> TeamIds  when
+      UserId :: integer() | binary(),
+      TeamIds :: [#team{}].
+get_team_id_list(UsrId) when is_integer(UsrId) ->          
+    get_team_id_list(list_to_binary(integer_to_list(UsrId)));
+
+get_team_id_list(UsrId) when is_binary(UsrId) -> 
+    case eredis_pool:q(?DB_SRV, ["HGET", ?USRS_TEAMS_KEY, UsrId]) of
+        {ok, undefined} -> [];
+        {ok, TeamIds} -> binary_to_term(TeamIds)
+    end.
+
+%%--------------------------------------------------------------------
+%% @doc delete team id list from redis.
+%% @end
+%%--------------------------------------------------------------------
+-spec delete_team_id_list(UsrId) -> ok when
+      UsrId :: integer() | binary().
+delete_team_id_list(UsrId) ->
+    {ok, _} = eredis_pool:q(?DB_SRV, ["HDEL", ?USRS_TEAMS_KEY, UsrId]),
+    ok.
 
 %%%===================================================================
 %%% Internal functions

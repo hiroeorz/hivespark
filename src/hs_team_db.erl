@@ -6,7 +6,7 @@
 %%% @end
 %%% Created : 18 Feb 2012 by Hiroe Shin <shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net>
 %%%-------------------------------------------------------------------
--module(hivespark_team_db).
+-module(hs_team_db).
 
 %% Include
 -include_lib("eunit/include/eunit.hrl").
@@ -14,7 +14,7 @@
 
 %% API
 -export([q/1, q/2,
-         insert/3, list/1, lookup_id/1, lookup_name/1, update/1, delete/1]).
+         all/0, insert/3, list/1, lookup_id/1, lookup_name/1, update/1, delete/1]).
 
 -define(KEY_PHRASE_1, "message_box3").
 -define(KEY_PHRASE_2, "SHIMANE").
@@ -46,14 +46,25 @@ q(Sql, Params) ->
         {ok, _Count, Columns, Values} -> 
             {ok, parse_result(Columns, Values, [])};
         {error, Reason} -> {error, Reason}
-    end.           
+    end.
+
 %%--------------------------------------------------------------------
-%% @doc get usr list from user id list.
+%% @doc get all team list.
+%% @end
+%%--------------------------------------------------------------------
+-spec all() -> [TeamList] when
+      TeamList :: [] | [#team{}].
+all() ->
+    {ok, TeamList} = q("select * from teams order by id desc"),
+    TeamList.
+
+%%--------------------------------------------------------------------
+%% @doc get team list from id list.
 %% @end
 %%--------------------------------------------------------------------
 -spec list(TeamIdList) -> {ok, TeamList} when
       TeamIdList :: [integer() | string() | binary()],
-      TeamList :: [] | [#usr{}].
+      TeamList :: [] | [#team{}].
 list([]) -> {ok, []};
 
 list([TeamId | _] = TeamIdList) when is_integer(TeamId) ->

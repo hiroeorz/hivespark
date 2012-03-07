@@ -15,12 +15,11 @@ element {
 <script type=text/javascript src="/shared/js/jquery.js"></script>
 <script type=text/javascript src="/shared/js/jquery.cookie.js"></script>
 <script type=text/javascript src="/shared/js/socket_handler.js"></script>
-<script type=text/javascript src="/shared/js/team.js"></script>
+<script type=text/javascript src="/shared/js/auth.js"></script>
 
 <script type="text/javascript">
     //<![CDATA[
       window.onload = function() {
-        socket_handler.open_callback = function(){team.list()}
         socket_handler.open_connection();
       }
 </script>
@@ -50,15 +49,37 @@ element {
 
    <div id="contents"> 
    
-      <h2>トップページ</h2> 
+      <h2>ログイン</h2> 
+        <div>
+	  <div>
+	    <input type="hidden" name="_method" value="PUT" />
+	  </div>
+	  <div style="width:202px; margin:0 auto 0 auto;">
+	    <div class="login-title">
+	      ログイン
+	    </div>
+	    <div class="login-form-top">
+	      <div class="formRow">
+		<label>ユーザID<br />
+		  <input type="text" 
+			 name="username" 
+			 value="" id="username" /></label>
+	      </div> <!-- close: formRow -->	
+	      <div class="formRow">
+		<label>パスワード<br />
+		  <input type="password" 
+			 name="password" 
+			 value="" id="password" /></label>
+	      </div> <!-- close: formRow -->
+	      
+	    </div>
 
-      <a href="javascript:void(0)" onclick="team.list()">参加中チームを表示</a>
-      /<a href="javascript:void(0)" onclick="team.all()">全チームを表示</a>
+            <input type="submit" name="Submit" value="ログイン" id="Submit"
+                   onclick="auth.login()" />
 
-      <div id="all-list">
-        <ul class="pola">
-        </ul>
-      </div>
+            <br /><br /><a href="/shared/new_usr.html">新規ユーザ登録</a>
+	  </div>
+      
 
       <div id="participation">
       

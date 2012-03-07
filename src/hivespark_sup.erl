@@ -63,13 +63,13 @@ init([]) ->
     Shutdown = 2000,
     Type = worker,
 
-    ContentsServer = {contents_server, {contents_server, start_link, []},
-                      Restart, Shutdown, Type, [contents_server]},
+    TeamSup = {hs_team_sup, {hs_team_sup, start_link, []},
+               Restart, Shutdown, Type, [hs_team_sup]},
 
-    TeamSup = {hivespark_team_sup, {hivespark_team_sup, start_link, []},
-               Restart, Shutdown, Type, [hivespark_team_sup]},
+    Session = {hs_session, {hs_session, start_link, []},
+               Restart, Shutdown, Type, [hs_session]},
 
-    {ok, {SupFlags, [ContentsServer, TeamSup]}}.
+    {ok, {SupFlags, [TeamSup, Session]}}.
 
 %%%===================================================================
 %%% Internal functions
