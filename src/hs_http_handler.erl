@@ -65,24 +65,25 @@ handle(C, A, ParamList, Req, State) when ?AUTHENTICATED_ROUTE ->
     SessionKey = proplists:get_value(<<"session_key">>, Cookies),
     Loggedin = hs_session:check_loggedin(UsrId, SessionKey),
 
-    Req2 = case Loggedin of
-               true -> 
-                   M = list_to_atom(
-                         lists:flatten([binary_to_list(C), "_controller"])),
-                   F = list_to_atom(binary_to_list(A)),
-                   {StatusCode, Bin} = M:F(ParamList, Req, State, SessionKey),
-                   reply(StatusCode, [], Bin, Req);
-               false ->
-                   reply(401, Req)
-           end,
-    {ok, Req2, State};
+    {Req2, NewState} = 
+        case Loggedin of
+            true -> 
+                M = list_to_atom(lists:flatten([binary_to_list(C), 
+                                                "_controller"])),
+                F = list_to_atom(binary_to_list(A)),
+                {StatusCode, Bin, NS} = M:F(ParamList, Req, State, SessionKey),
+                {reply(StatusCode, [], Bin, Req), NS};
+            false ->
+                {reply(401, Req), State}
+        end,
+    {ok, Req2, NewState};
 
 handle(C, A, ParamList, Req, State) when ?ROUTE ->
     M = list_to_atom(lists:flatten([binary_to_list(C), "_controller"])),
     F = list_to_atom(binary_to_list(A)),
-    {StatusCode, H, Bin} = M:F(ParamList, Req, State),
+    {StatusCode, H, Bin, NewState} = M:F(ParamList, Req, State),
     Req2 = reply(StatusCode, H, Bin, Req),
-    {ok, Req2, State};
+    {ok, Req2, NewState};
 
 handle(_, _, _, Req, State) ->
     Req2 = reply(404, Req),

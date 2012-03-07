@@ -20,7 +20,7 @@
 %%%===================================================================
 
 %% 新規ユーザ登録
-create(ParamList, _Req, _State) ->
+create(ParamList, _Req, State) ->
     Name = proplists:get_value(<<"name">>, ParamList),
     LongName = proplists:get_value(<<"longname">>, ParamList),
     Mail = proplists:get_value(<<"email">>, ParamList),
@@ -40,7 +40,7 @@ create(ParamList, _Req, _State) ->
                      {<<"reason">>, list_to_binary(atom_to_list(Reason))}]
             end,
 
-    {200, [], jiffy:encode({Reply})}.
+    {200, [], jiffy:encode({Reply}), State}.
 
 %%%===================================================================
 %%% Internal functions

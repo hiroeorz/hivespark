@@ -97,8 +97,8 @@ handle(C, A, ParamList, Req, State) when ?AUTHENTICATED_ROUTE ->
         true -> 
             M = list_to_atom(lists:flatten([binary_to_list(C), "_controller"])),
             F = list_to_atom(binary_to_list(A)),
-            {_, Bin} = M:F(ParamList, Req, State, SessionKey),
-            {reply, {text, Bin}, Req, State, hibernate};
+            {_, Bin, NewState} = M:F(ParamList, Req, State, SessionKey),
+            {reply, {text, Bin}, Req, NewState, hibernate};
         false ->
             Json = jiffy:encode({[{status, <<"not_authenticated">>}]}),
             {reply, {text, Json}, Req, State, hibernate}
@@ -107,8 +107,8 @@ handle(C, A, ParamList, Req, State) when ?AUTHENTICATED_ROUTE ->
 handle(C, A, ParamList, Req, State) when ?ROUTE ->
     M = list_to_atom(lists:flatten([binary_to_list(C), "_controller"])),
     F = list_to_atom(binary_to_list(A)),
-    {_, _, Bin} = M:F(ParamList, Req, State),
-    {reply, {text, Bin}, Req, State, hibernate};
+    {_, _, Bin, NewState} = M:F(ParamList, Req, State),
+    {reply, {text, Bin}, Req, NewState, hibernate};
 
 handle(C, A, _, Req, State) ->
     io:format("invalid route ~p:~p", [C, A]),

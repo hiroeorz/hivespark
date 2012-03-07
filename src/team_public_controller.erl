@@ -20,7 +20,7 @@
 %%%===================================================================
 
 %% 新規チーム登録
-create(ParamList, _Req, _State) ->
+create(ParamList, _Req, State) ->
     Name = proplists:get_value(<<"name">>, ParamList),
     IconUrl = proplists:get_value(<<"icon_url">>, ParamList),
     Description = proplists:get_value(<<"description">>, ParamList),
@@ -33,7 +33,7 @@ create(ParamList, _Req, _State) ->
                     [{result, false}, 
                      {reason, list_to_binary(atom_to_list(Reason))}]
             end,
-    {200, [], jiffy:encode({Reply})}.
+    {200, [], jiffy:encode({Reply}), State}.
 
 %%%===================================================================
 %%% Internal functions

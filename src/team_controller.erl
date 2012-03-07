@@ -20,43 +20,43 @@
 %%% API
 %%%===================================================================
 
-all(_ParamList, _Req, _State, _SessionKey) ->
+all(_ParamList, _Req, State, _SessionKey) ->
     Teams = lists:map(fun(Team) -> hs_team:to_tuple(Team) end, 
                       hs_team_db:all()),
     Reply = {[{<<"teams">>, Teams}]},
-    {200, jiffy:encode(Reply)}.    
+    {200, jiffy:encode(Reply), State}.    
 
-list(_ParamList, _Req, _State, SessionKey) ->
+list(_ParamList, _Req, State, SessionKey) ->
     Usr = hs_session:get_usr(SessionKey),
     Teams = lists:map(fun(Team) -> hs_team:to_tuple(Team) end, 
                       hs_usr:get_teams(Usr#usr.id)),
     Reply = {[{<<"teams">>, Teams}]},
-    {200, jiffy:encode(Reply)}.    
+    {200, jiffy:encode(Reply), State}.    
 
-add_usr(ParamList, _Req, _State, SessionKey) ->
+add_usr(ParamList, _Req, State, SessionKey) ->
     Usr = hs_session:get_usr(SessionKey),
     TeamId = proplists:get_value(<<"team_id">>, ParamList),    
     ok = hs_usr:add_team(Usr#usr.id, TeamId),
     Reply = {[{<<"result">>, true}]},
-    {200, jiffy:encode(Reply)}.
+    {200, jiffy:encode(Reply), State}.
 
-checkin(ParamList, _Req, _State, SessionKey) ->
+checkin(ParamList, _Req, State, SessionKey) ->
     Usr = hs_session:get_usr(SessionKey),
     TeamId = proplists:get_value(<<"team_id">>, ParamList),
 
     {ok, Ms} = hs_team:checkin(SessionKey, TeamId, Usr#usr.id),
     Members = lists:map(fun(U) -> hs_usr:to_tuple(U) end, Ms),
     Reply = {[{<<"team_id">>, TeamId}, {<<"members">>, Members}]},
-    {200, jiffy:encode(Reply)}.    
+    {200, jiffy:encode(Reply), State}.    
 
-show_checkin(_ParamList, _Req, _State, SessionKey) ->
+show_checkin(_ParamList, _Req, State, SessionKey) ->
     {ok, TeamId} = hs_session:get_value(SessionKey, "checkin_team_id"),
     {ok, Team} = hs_team:lookup_id(TeamId),
 
     Reply = {[{<<"team">>, hs_team:to_tuple(Team)}]},
-    {200, jiffy:encode(Reply)}.        
+    {200, jiffy:encode(Reply), State}.        
 
-send_message(ParamList, _Req, _State, SessionKey) ->
+send_message(ParamList, _Req, State, SessionKey) ->
     TeamId = proplists:get_value(<<"team_id">>, ParamList),
     TextBin = proplists:get_value(<<"text">>, ParamList),
     Usr = hs_session:get_usr(SessionKey),
@@ -70,9 +70,9 @@ send_message(ParamList, _Req, _State, SessionKey) ->
                     {[{<<"result">>, <<"failure">>}, 
                       {<<"reason">>, list_to_binary(atom_to_list(Reason))}]}
             end,    
-    {200, jiffy:encode(Reply)}.    
+    {200, jiffy:encode(Reply), State}.    
 
-get_messages(ParamList, _Req, _State, _SessionKey) ->
+get_messages(ParamList, _Req, State, _SessionKey) ->
     TeamId = proplists:get_value(<<"team_id">>, ParamList),
     Count = case proplists:get_value(<<"count">>, ParamList) of
                 undefined -> 0;
@@ -90,7 +90,7 @@ get_messages(ParamList, _Req, _State, _SessionKey) ->
                     lists:map(fun(Msg) -> hs_message:to_tuple(Msg) end,
                               MessageList)
             end,
-    {200, jiffy:encode(Reply)}.    
+    {200, jiffy:encode(Reply), State}.
 
 %%%===================================================================
 %%% Internal functions

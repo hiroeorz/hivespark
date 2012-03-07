@@ -25,7 +25,7 @@
 %% @end
 %%--------------------------------------------------------------------
 
-send(ParamList, _Req, _State, SessionKey) ->
+send(ParamList, _Req, State, SessionKey) ->
     TextBin = proplists:get_value(<<"text">>, ParamList),
     Usr = hs_session:get_usr(SessionKey),
 
@@ -39,7 +39,7 @@ send(ParamList, _Req, _State, SessionKey) ->
                   {<<"reason">>, list_to_binary(atom_to_list(Reason))}]}
         end,
     
-    {200, jiffy:encode(Reply)}.    
+    {200, jiffy:encode(Reply), State}.    
 
 %%%===================================================================
 %%% Internal functions
