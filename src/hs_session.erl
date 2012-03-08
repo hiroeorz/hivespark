@@ -18,7 +18,8 @@
 -export([start_link/0]).
 
 %% gen_server callbacks
--export([create/1, get_value/2, set_value/3, del_value/2, get_usr/1, check_loggedin/2]).
+-export([create/1, get_value/2, set_value/3, del_value/2, get_usr/1, 
+         check_loggedin/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
@@ -64,10 +65,8 @@ get_value(SessionKey, Key) ->
       Key :: string() | binary() | integer(),
       Val :: binary() | string() | integer().
 set_value(SessionKey, Key, Val) ->
-    case eredis_pool:q(?DB_SRV, ["HSET", SessionKey, Key, Val]) of
-        {ok, _} -> ok;
-        Else -> {error, Else}
-    end.
+    {ok, _} = eredis_pool:q(?DB_SRV, ["HSET", SessionKey, Key, Val]),
+    ok.
 
 %%--------------------------------------------------------------------
 %% @doc delete session value with key.
@@ -77,10 +76,8 @@ set_value(SessionKey, Key, Val) ->
       SessionKey :: binary(),
       Key :: string() | binary() | integer().
 del_value(SessionKey, Key) ->
-    case eredis_pool:q(?DB_SRV, ["HDEL", SessionKey, Key]) of
-        {ok, _} -> ok;
-        Else -> {error, Else}
-    end.
+    {ok, _} = eredis_pool:q(?DB_SRV, ["HDEL", SessionKey, Key]),
+    ok.
 
 %%--------------------------------------------------------------------
 %% @doc get usr record.
