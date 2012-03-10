@@ -13,27 +13,11 @@
 -include("hivespark.hrl").
 
 %% API
--export([create/3]).
+-export([]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
-
-%% 新規チーム登録
-create(ParamList, _Req, State) ->
-    Name = proplists:get_value(<<"name">>, ParamList),
-    IconUrl = proplists:get_value(<<"icon_url">>, ParamList),
-    Description = proplists:get_value(<<"description">>, ParamList),
-    Result = hs_team:create(Name, IconUrl, Description),
-
-    Reply = case Result of
-                {ok, Team} -> 
-                    [{result, true}, {team, hs_team:to_tuple(Team)}];
-                {error, Reason} ->
-                    [{result, false}, 
-                     {reason, list_to_binary(atom_to_list(Reason))}]
-            end,
-    {200, [], jiffy:encode({Reply}), State}.
 
 %%%===================================================================
 %%% Internal functions

@@ -25,7 +25,7 @@
 %% @end
 %%--------------------------------------------------------------------
 
-login(ParamList, _Req, _State) ->
+login(ParamList, _Req, State) ->
     Username = proplists:get_value(<<"username">>, ParamList),
     Password = proplists:get_value(<<"password">>, ParamList),
     Auth = hs_usr:authenticate(Username, Password),
@@ -46,11 +46,11 @@ login(ParamList, _Req, _State) ->
             Cookie2 = cowboy_cookies:cookie(<<"usr_id">>, UsrIdBin,
                                            [{path, <<"/">>}]),
 
-            {200, [Cookie1, Cookie2], jiffy:encode({Reply})};
+            {200, [Cookie1, Cookie2], jiffy:encode({Reply}), State};
         Else ->
             ?debugVal(Else),
             Reply = [{status, false}, {message, list_to_binary("認証失敗")}],
-            {401, [], jiffy:encode({Reply})}
+            {401, [], jiffy:encode({Reply}), State}
     end.
 
 %%%===================================================================

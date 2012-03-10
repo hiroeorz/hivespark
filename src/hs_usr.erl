@@ -13,7 +13,8 @@
 -include("hivespark.hrl").
 
 %% API
--export([create/6, delete/1, lookup_id/1, lookup_name/1, authenticate/2, 
+-export([create/6, update/1, delete/1, lookup_id/1, lookup_name/1, 
+         authenticate/2, 
          get_teams/1, add_team/2, delete_team/2, 
          to_tuple/1, add_message/2, get_messages/2, get_messages/3,
          checkin_to_team/2, get_checkin_team/1]).
@@ -46,6 +47,21 @@ create(Name, LongName, Mail, Password, IconUrl, Description) ->
         {error, not_found} ->
             hs_usr_db:insert(Name, LongName, Mail, Password, 
                                     IconUrl, Description)
+    end.
+
+%%--------------------------------------------------------------------
+%% @doc update user.
+%% @end
+%%--------------------------------------------------------------------
+-spec update(Usr) -> {ok, NewUsr} | {error, not_found} when
+      Usr :: #usr{},
+      NewUsr :: #usr{}.
+update(Usr) ->
+    case hs_usr:lookup_id(Usr#usr.id) of
+        {error, not_found} -> {error, not_found};
+        {ok, _} -> 
+            hs_usr_cache:delete(Usr#usr.id),
+            hs_usr_db:update(Usr)
     end.
 
 %%--------------------------------------------------------------------

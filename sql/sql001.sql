@@ -16,6 +16,7 @@ create table usrs (
 create table teams (
        id serial not null,
        name varchar(64) not null unique,
+       owner_id integer,
        icon_url varchar(256) not null default '',
        description text not null default '',
        created_at timestamp,

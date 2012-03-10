@@ -162,7 +162,7 @@ update(Usr) ->
                Usr#usr.lng]),
 
     case Result of
-        {ok, [Record]} -> Record;
+        {ok, [Record]} -> {ok, Record};
         {ok, []} -> {error, empty_result};
         {error, Reason} -> {error, Reason}
     end.

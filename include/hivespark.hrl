@@ -18,6 +18,7 @@
 
 -record(team, {id               ::integer(),
                name             ::string(),
+               owner_id         ::integer(),
                icon_url = ""    ::string(),
                description = "" ::string(),
                created_at       ::tuple()}).
@@ -39,6 +40,7 @@
         C == <<"team_public">>; A == <<"create">>).
 
 -define(AUTHENTICATED_ROUTE, 
+        C == <<"usr">>; A == <<"show">>,
         C == <<"team">>; A == <<"all">>,
         C == <<"team">>; A == <<"list">>,
         C == <<"team">>; A == <<"add_usr">>,

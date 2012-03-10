@@ -13,12 +13,28 @@
 -include("hivespark.hrl").
 
 %% API
--export([all/4, list/4, checkin/4, add_usr/4, show_checkin/4, 
+-export([create/4, all/4, list/4, checkin/4, add_usr/4, show_checkin/4, 
          send_message/4, get_messages/4]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
+
+create(ParamList, _Req, State, SessionKey) ->
+    Usr = hs_session:get_usr(SessionKey),
+    Name = proplists:get_value(<<"name">>, ParamList),
+    IconUrl = proplists:get_value(<<"icon_url">>, ParamList),
+    Description = proplists:get_value(<<"description">>, ParamList),
+    Result = hs_team:create(Name, Usr#usr.id, IconUrl, Description),
+
+    Reply = case Result of
+                {ok, Team} -> 
+                    [{result, true}, {team, hs_team:to_tuple(Team)}];
+                {error, Reason} ->
+                    [{result, false}, 
+                     {reason, list_to_binary(atom_to_list(Reason))}]
+            end,
+    {200, jiffy:encode({Reply}), State}.
 
 all(_ParamList, _Req, State, _SessionKey) ->
     Teams = lists:map(fun(Team) -> hs_team:to_tuple(Team) end, 

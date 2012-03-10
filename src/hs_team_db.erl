@@ -14,7 +14,7 @@
 
 %% API
 -export([q/1, q/2,
-         all/0, insert/3, list/1, lookup_id/1, lookup_name/1, update/1, delete/1]).
+         all/0, insert/4, list/1, lookup_id/1, lookup_name/1, update/1, delete/1]).
 
 -define(KEY_PHRASE_1, "message_box3").
 -define(KEY_PHRASE_2, "SHIMANE").
@@ -87,19 +87,20 @@ list([TeamId | _] = TeamIdList) when is_list(TeamId) ->
 %% @doc insert new team to database.
 %% @end
 %%--------------------------------------------------------------------
--spec insert(Name, IconUrl, Description) -> 
+-spec insert(Name, OwnerId, IconUrl, Description) -> 
                     {ok, Team} | {error, Reason} when
-      Name :: binary(), 
+      Name :: binary(),
+      OwnerId :: integer(),
       IconUrl :: binary(),
       Description :: binary(),
       Team :: #team{},
       Reason :: atom().
-insert(Name, IconUrl, Description) ->
+insert(Name, OwnerId, IconUrl, Description) ->
     CreatedAt = {date(), time()},
     Result = q("insert into teams (name, icon_url, description, created_at)
-                  values($1, $2, $3, $4)
+                  values($1, $2, $3, $4, $5)
                   returning *",
-               [Name, IconUrl, Description, CreatedAt]),
+               [Name, OwnerId, IconUrl, Description, CreatedAt]),
 
     case Result of
         {ok, [Record]} -> {ok, Record};
@@ -205,6 +206,7 @@ parse_record([Column | CTail], [Value | VTail], Result) ->
     Result1 = case Name of
                   <<"id">> -> Result#team{id = Value};
                   <<"name">> -> Result#team{name = Value};
+                  <<"owner_id">> -> Result#team{owner_id = Value};
                   <<"icon_url">> -> Result#team{icon_url = Value};
                   <<"description">> -> Result#team{description = Value};
                   <<"created_at">> -> Result#team{created_at = Value}

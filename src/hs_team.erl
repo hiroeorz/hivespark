@@ -15,7 +15,7 @@
 -include("hivespark.hrl").
 
 %% API
--export([create/3, delete/1, lookup_id/1, lookup_name/1, 
+-export([create/4, delete/1, lookup_id/1, lookup_name/1, 
          checkin_members/1, checkin/3, checkout/3, to_tuple/1,
          add_message/2, get_messages/3]).
 
@@ -39,16 +39,19 @@
 %% @doc create new team.
 %% @end
 %%--------------------------------------------------------------------
--spec create(Name, IconUrl, Description) -> {ok, Team} | {error, Reason} when
+-spec create(Name, OwnerId, IconUrl, Description) -> 
+                    {ok, Team} | {error, Reason} when
       Name :: binary(),
       IconUrl :: binary(),
       Description :: binary(),
+      OwnerId :: integer(),
       Team :: #team{},
       Reason :: atom().
-create(Name, IconUrl, Description) ->
+create(Name, OwnerId, IconUrl, Description) ->
     case hs_team_db:lookup_name(Name) of
         {ok, _Team} -> {error, already_exist};
-        {error, not_found} -> hs_team_db:insert(Name, IconUrl, Description)
+        {error, not_found} -> 
+            hs_team_db:insert(Name, IconUrl, Description, OwnerId)
     end.
 
 %%--------------------------------------------------------------------
