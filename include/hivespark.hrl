@@ -1,4 +1,4 @@
-
+-define(APP, hivespark).
 -define(DB_SRV, {global, dbsrv}).
 -define(DB, pool1).
 
@@ -29,24 +29,39 @@
 
 -record(message, {id            ::binary(),
                   usr_id        ::integer(),
+                  team_id       ::integer(),
+                  text          ::binary(),
+                  created_at    ::tuple(),
+                  lat           ::string(),
+                  lng           ::string()}).
+
+-record(article, {id            ::binary(),
+                  usr_id        ::integer(),
+                  team_id       ::integer(),
+                  title         ::binary(),
                   text          ::binary(),
                   created_at    ::tuple(),
                   lat           ::string(),
                   lng           ::string()}).
 
 -define(ROUTE,
-        C == <<"auth">>; A == <<"login">>,
-        C == <<"usr_public">>; A == <<"create">>,
-        C == <<"team_public">>; A == <<"create">>).
+        C == <<"auth">>, A == <<"login">>;
+        C == <<"usr_public">>, A == <<"create">>).
 
 -define(AUTHENTICATED_ROUTE, 
-        C == <<"usr">>; A == <<"show">>,
-        C == <<"team">>; A == <<"all">>,
-        C == <<"team">>; A == <<"list">>,
-        C == <<"team">>; A == <<"add_usr">>,
-        C == <<"team">>; A == <<"checkin">>,
-        C == <<"team">>; A == <<"show_checkin">>,
-        C == <<"team">>; A == <<"send_message">>,
-        C == <<"team">>; A == <<"get_messages">>,
-        C == <<"message">>; A == <<"send">>
+        C == <<"usr">>, A == <<"show">>;
+        C == <<"usr">>, A == <<"image">>;
+        C == <<"usr">>, A == <<"save_image">>;
+        C == <<"team">>, A == <<"create">>;
+        C == <<"team">>, A == <<"update">>;
+        C == <<"team">>, A == <<"all">>;
+        C == <<"team">>, A == <<"list">>;
+        C == <<"team">>, A == <<"add_usr">>;
+        C == <<"team">>, A == <<"checkin">>;
+        C == <<"team">>, A == <<"show_checkin">>;
+        C == <<"team">>, A == <<"send_message">>;
+        C == <<"team">>, A == <<"get_messages">>;
+        C == <<"team">>, A == <<"send_article">>;
+        C == <<"team">>, A == <<"get_articles">>;
+        C == <<"message">>, A == <<"send">>
        ).

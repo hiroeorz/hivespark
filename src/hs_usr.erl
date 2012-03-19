@@ -19,7 +19,7 @@
          to_tuple/1, add_message/2, get_messages/2, get_messages/3,
          checkin_to_team/2, get_checkin_team/1]).
 
--define(USR_TIMELINE, <<"_hs_usr_timeline_">>).
+-define(USR_TIMELINE, <<"_hut_">>).
 -define(USR_CHECKIN_TEAM, <<"hs_usr_checkin_team">>).
 
 %%%===================================================================
@@ -136,19 +136,7 @@ get_teams(UsrId) ->
                 TeamIds1 -> TeamIds1
             end,
 
-    Teams = hs_team_cache:list(TeamIds),
-
-    case Teams of
-        [] -> [];
-        Teams1 ->
-            case lists:filter(fun(Elem) -> Elem == undefined end, Teams) of
-                [] -> Teams1;
-                _ ->
-                    {ok, TeamsFromDb} = hs_team_db:list(TeamIds),
-                    ok = restore_team_relational_cache(UsrId, TeamsFromDb),
-                    TeamsFromDb
-            end
-    end.
+    hs_team_db:list(TeamIds).
 
 -spec add_team(UsrId, TeamId) -> ok when
       UsrId :: integer() | binary(),
@@ -248,14 +236,6 @@ get_messages(UsrId, Offset, Count) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
--spec restore_team_relational_cache(UsrId, Teams) -> ok when
-      UsrId :: integer(),
-      Teams :: [#team{}].
-restore_team_relational_cache(UsrId, Teams) ->
-    lists:map(fun(Team) -> hs_team_cache:store(Team) end, Teams),
-    IdsFromDb1 = hs_usr_db:get_team_id_list(UsrId),
-    hs_usr_cache:add_team_id_list(UsrId, IdsFromDb1).
-    
 -spec get_key_of_timeline(UsrId) -> Key when
       UsrId :: integer(),
       Key :: binary().

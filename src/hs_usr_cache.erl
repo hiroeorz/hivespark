@@ -16,7 +16,6 @@
 -export([list/1, store/1, lookup_id/1, lookup_name/1, delete/1, 
          add_team_id_list/2, get_team_id_list/1, delete_team_id_list/1]).
 
--define(MaxIdKey, <<"max_usr_id">>).
 -define(USR_DB, <<"usr_cache">>).
 -define(USR_NAME_INDEX_KEY, <<"usr_name_index">>).
 -define(USRS_TEAMS_KEY, <<"usrs_teams">>).

@@ -27,3 +27,15 @@ create table usrs_teams (
        team_id integer not null,
        created_at timestamp,
        Constraint "usr_id_team_id_pkey" Primary Key("usr_id", "team_id"));
+
+create table articles (
+       id serial not null,
+       usr_id integer not null,
+       team_id integer not null,
+       title varchar(256),
+       text text,
+       created_at timestamp,
+       lat varchar(64),
+       lng varchar(64),
+       Constraint "articles_pkey" Primary Key("id"));
+       

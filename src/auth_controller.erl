@@ -28,8 +28,9 @@
 login(ParamList, _Req, State) ->
     Username = proplists:get_value(<<"username">>, ParamList),
     Password = proplists:get_value(<<"password">>, ParamList),
+    io:format("username:~s password:~s", [Username, Password]),
     Auth = hs_usr:authenticate(Username, Password),
-    
+
     case Auth of
         {ok, UsrId} ->
             {ok, Usr} = hs_usr:lookup_id(UsrId),

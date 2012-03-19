@@ -15,9 +15,10 @@
 -include("hivespark.hrl").
 
 %% API
--export([create/4, delete/1, lookup_id/1, lookup_name/1, 
+-export([create/4, update/1, delete/1, lookup_id/1, lookup_name/1, 
          checkin_members/1, checkin/3, checkout/3, to_tuple/1,
-         add_message/2, get_messages/3]).
+         add_message/1, get_messages/3, get_members/1, get_articles/3,
+         add_article/1]).
 
 -export([start_child/1, start_link/1]).
 
@@ -27,7 +28,7 @@
 
 -define(SERVER, ?MODULE). 
 -define(CHECKIN_TEAM_ID, "checkin_team_id").
--define(TEAM_TIMELINE, <<"_hs_usr_timeline_">>).
+-define(TEAM_TIMELINE, <<"_htt_">>).
 
 -record(state, {id :: integer()}).
 
@@ -42,17 +43,31 @@
 -spec create(Name, OwnerId, IconUrl, Description) -> 
                     {ok, Team} | {error, Reason} when
       Name :: binary(),
+      OwnerId :: integer() | binary(),
       IconUrl :: binary(),
       Description :: binary(),
-      OwnerId :: integer(),
       Team :: #team{},
       Reason :: atom().
-create(Name, OwnerId, IconUrl, Description) ->
+create(Name, OwnerId, IconUrl, Description) when is_binary(OwnerId) ->
+    create(Name, list_to_integer(binary_to_list(OwnerId)), 
+           IconUrl, Description);
+
+create(Name, OwnerId, IconUrl, Description) when is_integer(OwnerId) ->
     case hs_team_db:lookup_name(Name) of
         {ok, _Team} -> {error, already_exist};
         {error, not_found} -> 
-            hs_team_db:insert(Name, IconUrl, Description, OwnerId)
+            hs_team_db:insert(Name, OwnerId, IconUrl, Description)
     end.
+
+%%--------------------------------------------------------------------
+%% @doc update team.
+%% @end
+%%--------------------------------------------------------------------
+-spec update(Team) -> {ok, Team} | {error, Reason} when
+      Team :: #team{},
+      Reason :: atom().
+update(Team) ->
+    hs_team_db:update(Team).
 
 %%--------------------------------------------------------------------
 %% @doc delete team.
@@ -65,7 +80,6 @@ delete(TeamId) ->
         {error, not_found} ->
             {error, not_found};
         {ok, _Team} ->
-            hs_team_cache:delete(TeamId),
             {ok, deleted} = hs_team_db:delete(TeamId),
             {ok, deleted}
     end.
@@ -78,16 +92,7 @@ delete(TeamId) ->
       TeamId :: integer() | list() | binary(),
       Team :: #team{}.
 lookup_id(TeamId) ->
-    case hs_team_cache:lookup_id(TeamId) of
-        {ok, Team} -> {ok, Team};
-        {error, not_found} ->
-            case hs_team_db:lookup_id(TeamId) of
-                {error, not_found} -> {error, not_found};
-                {ok, Team} -> 
-                    hs_team_cache:store(Team),
-                    {ok, Team}
-            end
-    end.
+    hs_team_db:lookup_id(TeamId).
 
 %%--------------------------------------------------------------------
 %% @doc lookup team by name.
@@ -97,16 +102,7 @@ lookup_id(TeamId) ->
       Name :: string(),
       Team :: #team{}.
 lookup_name(Name) ->
-    case hs_team_cache:lookup_name(Name) of
-        {ok, Team} -> {ok, Team};
-        {error, not_found} ->
-            case hs_team_db:lookup_name(Name) of
-                {error, not_found} -> {error, not_found};
-                {ok, Team} -> 
-                    hs_team_cache:store(Team),
-                    {ok, Team}
-            end
-    end.
+    hs_team_db:lookup_name(Name).
 
 %%--------------------------------------------------------------------
 %% @doc checkin usr in team room.
@@ -185,23 +181,30 @@ to_tuple(TeamId) when is_integer(TeamId) ->
     end;
 
 to_tuple(Team) ->
-    {[{id, Team#team.id}, {name, Team#team.name}, {icon_url, Team#team.icon_url},
+    {ok, Owner} = hs_usr:lookup_id(Team#team.owner_id),
+    {ok, Members} = get_members(Team#team.id),
+
+    {[{id, Team#team.id}, {owner, hs_usr:to_tuple(Owner)},
+      {members, lists:map(fun(U) -> hs_usr:to_tuple(U) end, Members)},
+      {name, Team#team.name}, {icon_url, Team#team.icon_url}, 
       {description, Team#team.description}]}.
 
 %%--------------------------------------------------------------------
 %% @doc add message to users timeline.
 %% @end
 %%--------------------------------------------------------------------
--spec add_message(TeamId, Msg) -> ok when
-      TeamId :: integer() | binary(),
-      Msg :: #message{}.
-add_message(TeamId, Msg=#message{usr_id=UsrId, text=Text}) when 
+-spec add_message(Msg) -> {ok, Msg2} | {error, Reason} when
+      Msg :: #message{},
+      Msg2 :: #message{},
+      Reason :: atom().
+add_message(Msg=#message{usr_id=UsrId, text=Text, team_id=TeamId}) when 
       is_binary(TeamId),
       is_integer(UsrId),
       is_binary(Text) ->
-    add_message(list_to_integer(binary_to_list(TeamId)), Msg);
+    TeamIdInt = list_to_integer(binary_to_list(TeamId)),
+    add_message(Msg#message{team_id = TeamIdInt});
 
-add_message(TeamId, Msg=#message{usr_id=UsrId, text=Text}) when 
+add_message(Msg=#message{usr_id=UsrId, text=Text, team_id=TeamId}) when 
       is_integer(TeamId),
       is_integer(UsrId),
       is_binary(Text) ->
@@ -211,6 +214,23 @@ add_message(TeamId, Msg=#message{usr_id=UsrId, text=Text}) when
             ok = add_message_id(TeamId, NewMsg#message.id),
             {ok, NewMsg}
     end.
+
+-spec add_article(Art) -> {ok, Art2} | {error, Reason} when
+      Art :: #article{},
+      Art2 :: #article{}, 
+      Reason :: atom().
+add_article(Art=#article{usr_id=UsrId, text=Text, team_id=TeamId}) when 
+      is_binary(TeamId),
+      is_integer(UsrId),
+      is_binary(Text) ->
+    TeamIdInt = list_to_integer(binary_to_list(TeamId)),
+    add_message(Art#article{team_id = TeamIdInt});
+
+add_article(Art=#article{usr_id=UsrId, text=Text, team_id=TeamId}) when 
+      is_integer(TeamId),
+      is_integer(UsrId),
+      is_binary(Text) ->
+    hs_article_db:insert(Art).
 
 %%--------------------------------------------------------------------
 %% @doc add message to users timeline.
@@ -230,6 +250,36 @@ get_messages(TeamId, Offset, Count) when is_integer(TeamId) ->
         {ok, undefined} -> {error, not_found};
         {ok, Ids} -> {ok, hs_message:mget_msg(Ids)}
     end.
+
+%%--------------------------------------------------------------------
+%% @doc add message to users timeline.
+%% @end
+%%--------------------------------------------------------------------
+-spec get_articles(TeamId, Offset, Count) -> 
+                          {ok, ArticleList} | {error, not_found}  when
+      TeamId :: integer() | binary(),
+      Offset :: integer(),
+      Count :: integer(),
+      ArticleList :: [#article{}] | [].
+get_articles(TeamId, Offset, Count) when is_binary(TeamId) ->
+    get_articles(list_to_integer(binary_to_list(TeamId)), Offset, Count);
+
+get_articles(TeamId, Offset, Count) when is_integer(TeamId) ->
+    hs_article_db:list_of_team(TeamId, Offset, Count).
+
+%%--------------------------------------------------------------------
+%% @doc add message to users timeline.
+%% @end
+%%--------------------------------------------------------------------
+-spec get_members(TeamId) -> {ok, UsrList} | {error, Reason} when
+      TeamId :: integer() | binary(),
+      UsrList :: [#usr{}],
+      Reason :: atom().
+get_members(TeamId) when is_binary(TeamId) ->
+    get_members(list_to_integer(binary_to_list(TeamId)));
+
+get_members(TeamId) when is_integer(TeamId) ->
+    hs_usr_team_db:get_teams_usrs(TeamId).
 
 %%--------------------------------------------------------------------
 %% @doc

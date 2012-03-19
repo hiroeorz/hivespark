@@ -97,7 +97,8 @@ list([TeamId | _] = TeamIdList) when is_list(TeamId) ->
       Reason :: atom().
 insert(Name, OwnerId, IconUrl, Description) ->
     CreatedAt = {date(), time()},
-    Result = q("insert into teams (name, icon_url, description, created_at)
+    Result = q("insert into teams (name, owner_id, icon_url, description, 
+                                   created_at)
                   values($1, $2, $3, $4, $5)
                   returning *",
                [Name, OwnerId, IconUrl, Description, CreatedAt]),
@@ -158,7 +159,7 @@ update(Team) ->
                Team#team.description]),
 
     case Result of
-        {ok, [Record]} -> Record;
+        {ok, [Record]} -> {ok, Record};
         {ok, []} -> {error, empty_result};
         {error, Reason} -> {error, Reason}
     end.

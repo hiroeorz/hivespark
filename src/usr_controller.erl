@@ -64,15 +64,18 @@ save_image(_ParamList, Req, State, SessionKey) ->
     Usr = hs_session:get_usr(SessionKey),
     {Results, _} = hs_util:acc_multipart(Req, []),
     
-    Result = case hs_util:get_multi_data(Results, "") of
+    Result = case hs_util:get_multi_data(Results) of
                  {error, not_found} -> error;
                  {ok, Data, Type} ->
-                     file:make_dir(?ICON_DIR),
                      FName = binary_to_list(Usr#usr.name),
                      Ext = hs_util:ext_part(Type),
                      Path = lists:flatten([?ICON_DIR, FName, Ext]),
                      ok = file:write_file(Path, Data),
-                     IconUrl = list_to_binary("/usr/image?fname=" ++ FName),
+
+                     {ok, BaseUrl} = application:get_env(?APP, base_url),
+                     IconUrlStr = lists:flatten([BaseUrl, "/usr/image?fname=", 
+                                                 FName, Ext]),
+                     IconUrl = list_to_binary(IconUrlStr),
                      {ok, _} = hs_usr:update(Usr#usr{icon_url = IconUrl}),
                      ok
              end,

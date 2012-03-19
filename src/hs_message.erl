@@ -15,7 +15,7 @@
 %% API
 -export([save/1, get_msg/1, get_next_id/1, mget_msg/1, to_tuple/1]).
 
--define(MSG_KEY_HEADER, "_hs_msg_").
+-define(MSG_KEY_HEADER, "_hmk_").
 -define(USR_MSG_ID, <<"usr_msg_id">>).
 -define(MSGID_USR_PART_LENGTH, 10).
 -define(MSGID_MSG_PART_LENGTH, 10).
@@ -33,7 +33,8 @@
       Message :: #message{},
       NewMessage :: #message{},
       Reason :: atom().
-save(Message=#message{usr_id=UsrId, text=Text}) when is_binary(Text) ->
+save(Message=#message{usr_id=UsrId, team_id=_TeamId, text=Text}) when 
+      is_binary(Text) ->
     MsgId = get_next_id(UsrId),
     NewMessage = Message#message{id=list_to_binary(MsgId), 
                                  created_at={date(), time()}},
@@ -83,16 +84,19 @@ mget_msg(MsgIdList) when is_list(MsgIdList) ->
     end.
 
 %%--------------------------------------------------------------------
-%% @doc parse usr for json object.
+%% @doc parse message for json object.
 %% @end
 %%--------------------------------------------------------------------
 -spec to_tuple(Msg) -> TupleMsg when
       Msg :: #message{},
       TupleMsg :: tuple().
 to_tuple(Msg) ->
-    {[{id, Msg#message.id}, {usr_id, Msg#message.usr_id}, 
-      {text, Msg#message.text}, {lat, Msg#message.lat}, 
-      {lng, Msg#message.lng}]}.
+    {ok, Usr} = hs_usr:lookup_id(Msg#message.usr_id),
+    DateTime = hs_util:create_datetime_string(Msg#message.created_at),
+        
+    {[{id, Msg#message.id}, {usr, hs_usr:to_tuple(Usr)},
+      {text, Msg#message.text}, {created_at, DateTime},
+      {lat, Msg#message.lat}, {lng, Msg#message.lng}]}.
 
 %%%===================================================================
 %%% Internal functions

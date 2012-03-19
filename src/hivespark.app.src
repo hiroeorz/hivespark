@@ -8,5 +8,8 @@
                   stdlib
                  ]},
   {mod, { hivespark_app, []}},
-  {env, []}
+  {env, [
+    %%{base_url, "http://172.16.15.203:8080"}
+    {base_url, "http://192.168.1.100:8080"}
+  ]}
  ]}.

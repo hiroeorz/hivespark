@@ -33,7 +33,26 @@ terminate(_Req, _State) ->
 %%%===================================================================
 handle(Req, State) ->
     {PathList, _} = cowboy_http_req:path(Req),
-    {ParamList, _} = cowboy_http_req:qs_vals(Req),
+    {Method, _} = cowboy_http_req:method(Req),
+
+    ParamList = 
+        case Method of
+            'GET' ->
+                {ParamList1, _} = cowboy_http_req:qs_vals(Req),
+                ParamList1;
+            'POST' ->
+                case cowboy_http_req:parse_header('Content-Type', Req) of
+                    {{<<"multipart">>, <<"form-data">>, _}, _} -> [];
+                    _Else ->
+                        case cowboy_http_req:body_qs(Req) of
+                            {ParamList2, _} -> ParamList2;
+                            _ -> []
+                        end
+                end
+        end,
+
+    ?debugVal(PathList),
+    ?debugVal(ParamList),
 
     case PathList of
         [Controller, Action | _] ->
@@ -58,8 +77,9 @@ handle(Req, State) ->
       NewState :: tuple().
 
 handle(C, A, ParamList, Req, State) when ?AUTHENTICATED_ROUTE ->
+    io:format("secure route"),
     {Cookies, _} = cowboy_http_req:cookies(Req),
-    ?debugVal(Cookies),
+    %%?debugVal(Cookies),
 
     UsrId = proplists:get_value(<<"usr_id">>, Cookies),
     SessionKey = proplists:get_value(<<"session_key">>, Cookies),
@@ -79,6 +99,7 @@ handle(C, A, ParamList, Req, State) when ?AUTHENTICATED_ROUTE ->
     {ok, Req2, NewState};
 
 handle(C, A, ParamList, Req, State) when ?ROUTE ->
+    io:format("public route"),
     M = list_to_atom(lists:flatten([binary_to_list(C), "_controller"])),
     F = list_to_atom(binary_to_list(A)),
     {StatusCode, H, Bin, NewState} = M:F(ParamList, Req, State),
@@ -86,6 +107,7 @@ handle(C, A, ParamList, Req, State) when ?ROUTE ->
     {ok, Req2, NewState};
 
 handle(_, _, _, Req, State) ->
+    io:format("unknown route"),
     Req2 = reply(404, Req),
     {ok, Req2, State}.
 

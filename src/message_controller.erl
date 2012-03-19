@@ -27,10 +27,13 @@
 
 send(ParamList, _Req, State, SessionKey) ->
     TextBin = proplists:get_value(<<"text">>, ParamList),
+    TeamId = proplists:get_value(<<"team_id">>, ParamList),
+
     Usr = hs_session:get_usr(SessionKey),
+    Msg = #message{usr_id = Usr#usr.id, text = TextBin, team_id=TeamId},
 
     Reply = 
-        case hs_message:save(#message{usr_id = Usr#usr.id, text = TextBin}) of
+        case hs_message:save(Msg) of
             {ok, Message} ->
                 TMsg = hs_message:to_tuple(Message),
                 {[{<<"result">>, <<"success">>}, {message, TMsg}]};

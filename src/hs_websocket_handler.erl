@@ -88,6 +88,12 @@ handle(<<"socket">>, <<"init">>, _ParamList, Req, State) ->
                           {<<"message">>, <<"接続完了">>}]}),
     {reply, {text, Json}, Req, State, hibernate};
 
+handle(C, A, ParamList, Req, State) when ?ROUTE ->
+    M = list_to_atom(lists:flatten([binary_to_list(C), "_controller"])),
+    F = list_to_atom(binary_to_list(A)),
+    {_, _, Bin, NewState} = M:F(ParamList, Req, State),
+    {reply, {text, Bin}, Req, NewState, hibernate};
+
 handle(C, A, ParamList, Req, State) when ?AUTHENTICATED_ROUTE ->
     UsrId = proplists:get_value(<<"usr_id">>, ParamList),
     SessionKey = proplists:get_value(<<"session_key">>, ParamList),
@@ -103,12 +109,6 @@ handle(C, A, ParamList, Req, State) when ?AUTHENTICATED_ROUTE ->
             Json = jiffy:encode({[{status, <<"not_authenticated">>}]}),
             {reply, {text, Json}, Req, State, hibernate}
     end;
-
-handle(C, A, ParamList, Req, State) when ?ROUTE ->
-    M = list_to_atom(lists:flatten([binary_to_list(C), "_controller"])),
-    F = list_to_atom(binary_to_list(A)),
-    {_, _, Bin, NewState} = M:F(ParamList, Req, State),
-    {reply, {text, Bin}, Req, NewState, hibernate};
 
 handle(C, A, _, Req, State) ->
     io:format("invalid route ~p:~p", [C, A]),

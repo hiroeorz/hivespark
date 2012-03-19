@@ -14,8 +14,11 @@
 
 %% API
 -export([q/1, q/2, 
-         list/1, insert/6, lookup_id/1, lookup_name/1, update/1, delete/1, authenticate/2,
+         list/1, insert/6, lookup_id/1, lookup_name/1, update/1, delete/1, 
+         authenticate/2,
          add_team/2, delete_team/2, get_team_id_list/1]).
+
+-export([parse_result/3]).
 
 -define(KEY_PHRASE_1, "message_box3").
 -define(KEY_PHRASE_2, "SHIMANE").

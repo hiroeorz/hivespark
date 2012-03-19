@@ -13,7 +13,7 @@
 -include("hivespark.hrl").
 
 %% API
--export([q/1, q/2]).
+-export([q/1, q/2, get_teams_usrs/1]).
 
 %%%===================================================================
 %%% API
@@ -42,6 +42,26 @@ q(Sql, Params) ->
             {ok, parse_result(Columns, Values, [])};
         {error, Reason} -> {error, Reason}
     end.           
+
+%%--------------------------------------------------------------------
+%% @doc get usrs from team_id.
+%% @end
+%%--------------------------------------------------------------------
+-spec get_teams_usrs(TeamId) -> {ok, [#usr{}]} | {error, Reason} when
+      TeamId :: integer(),
+      Reason :: atom().
+get_teams_usrs(TeamId) ->
+    Result =  postgres_pool:equery(?DB, "select u.* from usrs u, usrs_teams ut
+                                           where team_id = $1 and
+                                                 ut.usr_id = u.id
+                                           order by usr_id", 
+                                   [TeamId]),
+    case Result of
+        {error, Reason} -> {error, Reason};
+        {ok, Columns, Values} -> 
+            {ok, hs_usr_db:parse_result(Columns, Values, [])}
+    end.
+
 
 %%%===================================================================
 %%% Internal functions
