@@ -110,7 +110,6 @@ check_loggedin(UsrId, SessionKey) when is_integer(UsrId) ->
 
 check_loggedin(UsrId, SessionKey) when is_binary(UsrId) ->
     case get_value(SessionKey, <<"usr_id">>) of
-        undefined -> false;
         {error, not_found} -> false;
         {ok, UsrIdFromSession} ->
             case UsrIdFromSession of
