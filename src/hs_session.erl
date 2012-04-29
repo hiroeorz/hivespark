@@ -24,7 +24,7 @@
          terminate/2, code_change/3]).
 
 -define(SERVER, ?MODULE). 
--define(SESSION_KEY_HEADER, "_hs_session_").
+-define(SESSION_KEY_HEADER, <<"_hs_session_">>).
 
 -record(state, {}).
 
@@ -173,8 +173,7 @@ init([]) ->
 %% @end
 %%--------------------------------------------------------------------
 handle_call({create, Usr}, _From, State) ->
-    SessionKey = create_session_key(Usr),
-
+    SessionKey = create_session_key(),
     Reply =  case get_value(SessionKey, <<"usr_id">>) of
                  {ok, _} -> {error, already_exist};
                  {error, not_found} ->
@@ -247,25 +246,22 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
--spec create_session_key(Usr) -> SessionKey when
-      Usr :: #usr{},
-      SessionKey :: binary().
-create_session_key(Usr) ->
-    {{Year, Month, Day}, {Hour, Min, Sec}} = Usr#usr.created_at,
-    {{YearNow, MonthNow, DayNow}, {HourNow, MinNow, SecNow}} = {date(), time()},
+-type session_key() :: binary().
 
-    TimeStr = integer_to_list(Year) ++ integer_to_list(Month) ++
-        integer_to_list(Day) ++ integer_to_list(Hour) ++
-        integer_to_list(Min) ++ float_to_list(Sec),
-    
-    TimeNowStr = integer_to_list(YearNow) ++ integer_to_list(MonthNow) ++
-        integer_to_list(DayNow) ++ integer_to_list(HourNow) ++
-        integer_to_list(MinNow) ++ integer_to_list(SecNow),
-    
-    SessionKeyBin = crypto:sha([TimeStr, TimeNowStr,
-                                binary_to_list(Usr#usr.name),
-                                binary_to_list(Usr#usr.email)]),
-    
-    S = lists:flatten(lists:map(fun(X) -> io_lib:format("~.16X", [X, ""]) end, 
-                                binary_to_list(SessionKeyBin))),
-    list_to_binary(?SESSION_KEY_HEADER ++ string:substr(S, 1, 32)).
+-spec create_session_key() -> session_key().
+create_session_key() ->
+    list_to_binary([?SESSION_KEY_HEADER,
+                    mochihex:to_hex(<<(calendar:datetime_to_gregorian_seconds(calendar:now_to_local_time(now()))):32,
+                                      (crypto:rand_bytes(32))/binary>>)]).
+
+-ifdef(TEST).
+
+create_session_key_test_() ->
+    [
+        {"session key byte size 84",
+            ?_assertEqual(84, byte_size(create_session_key()))},
+        {"session key is not duplicate",
+            ?_assertNot(create_session_key() =:= create_session_key())}
+    ].
+
+-endif.
