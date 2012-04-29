@@ -16,9 +16,10 @@
 
 %% API
 -export([create/4, update/1, delete/1, lookup_id/1, lookup_name/1, 
-         checkin_members/1, checkin/3, checkout/3, to_tuple/1,
-         add_message/1, get_messages/3, get_members/1, get_articles/3,
-         add_article/1]).
+         checkin_members/1, checkin/3, checkout/3, to_tuple/1, 
+         is_member/2, is_owner/2,
+         add_message/1, get_messages/3, get_members/1, get_articles/4,
+         add_article/1, statuses_list/2]).
 
 -export([start_child/1, start_link/1]).
 
@@ -56,7 +57,9 @@ create(Name, OwnerId, IconUrl, Description) when is_integer(OwnerId) ->
     case hs_team_db:lookup_name(Name) of
         {ok, _Team} -> {error, already_exist};
         {error, not_found} -> 
-            hs_team_db:insert(Name, OwnerId, IconUrl, Description)
+            {ok, Team} = hs_team_db:insert(Name, OwnerId, IconUrl, Description),
+            hs_usr:add_team(OwnerId, Team#team.id),
+            {ok, Team}
     end.
 
 %%--------------------------------------------------------------------
@@ -168,6 +171,34 @@ checkin_members(TeamId) ->
     end.
 
 %%--------------------------------------------------------------------
+%% @doc check added Usr is member of Team.
+%% @end
+%%--------------------------------------------------------------------
+-spec is_member(TeamId, UsrId) -> true | false when
+      TeamId :: integer(),
+      UsrId :: integer().
+is_member(TeamId, UsrId) ->
+    {ok, Members} = get_members(TeamId),
+    lists:any(fun(M) -> M#usr.id == UsrId end, Members).
+
+%%--------------------------------------------------------------------
+%% @doc check added Usr is owner of Team.
+%% @end
+%%--------------------------------------------------------------------
+-spec is_owner(TeamId, UsrId) -> true | false when
+      TeamId :: integer(),
+      UsrId :: integer().
+is_owner(TeamId, UsrId) ->
+    case lookup_id(TeamId) of
+        {error, not_found} -> false;
+        {ok, Team} ->
+            case Team#team.owner_id of
+                UsrId -> true;
+                _ -> false
+            end
+    end.
+
+%%--------------------------------------------------------------------
 %% @doc parse team for json object.
 %% @end
 %%--------------------------------------------------------------------
@@ -186,7 +217,9 @@ to_tuple(Team) ->
 
     {[{id, Team#team.id}, {owner, hs_usr:to_tuple(Owner)},
       {members, lists:map(fun(U) -> hs_usr:to_tuple(U) end, Members)},
-      {name, Team#team.name}, {icon_url, Team#team.icon_url}, 
+      {name, Team#team.name}, {icon_url, Team#team.icon_url},
+      {status, Team#team.status},
+      {status_description, Team#team.status_description},
       {description, Team#team.description}]}.
 
 %%--------------------------------------------------------------------
@@ -247,25 +280,40 @@ get_messages(TeamId, Offset, Count) when is_binary(TeamId) ->
 
 get_messages(TeamId, Offset, Count) when is_integer(TeamId) ->
     case get_message_ids(TeamId, Offset, Count) of
-        {ok, undefined} -> {error, not_found};
+        {ok, []} ->
+            spawn(fun() -> load_messages_to_cache(TeamId) end),
+            hs_message_db:list_of_team(TeamId, Offset, Count);
         {ok, Ids} -> {ok, hs_message:mget_msg(Ids)}
-    end.
+    end.        
+
+%%--------------------------------------------------------------------
+%% @doc get team list of given status.
+%% @end
+%%--------------------------------------------------------------------
+-spec statuses_list(Lebel, Count) -> [TeamList] when
+      Lebel :: integer(),
+      Count :: integer(),
+      TeamList :: [] | [#team{}].
+statuses_list(Level, Count) ->
+    hs_team_db:statuses_list(Level, Count).
 
 %%--------------------------------------------------------------------
 %% @doc add message to users timeline.
 %% @end
 %%--------------------------------------------------------------------
--spec get_articles(TeamId, Offset, Count) -> 
+-spec get_articles(TeamId, Offset, Count, Status) -> 
                           {ok, ArticleList} | {error, not_found}  when
       TeamId :: integer() | binary(),
       Offset :: integer(),
       Count :: integer(),
+      Status :: integer(),
       ArticleList :: [#article{}] | [].
-get_articles(TeamId, Offset, Count) when is_binary(TeamId) ->
-    get_articles(list_to_integer(binary_to_list(TeamId)), Offset, Count);
+get_articles(TeamId, Offset, Count, Status) when is_binary(TeamId) ->
+    get_articles(list_to_integer(binary_to_list(TeamId)), Offset, 
+                 Count, Status);
 
-get_articles(TeamId, Offset, Count) when is_integer(TeamId) ->
-    hs_article_db:list_of_team(TeamId, Offset, Count).
+get_articles(TeamId, Offset, Count, Status) when is_integer(TeamId) ->
+    hs_article_db:list_of_team(TeamId, Offset, Count, Status).
 
 %%--------------------------------------------------------------------
 %% @doc add message to users timeline.
@@ -444,3 +492,15 @@ get_message_ids(TeamId, Offset, Count) ->
         {ok, undefined} -> {error, not_found};
         {ok, MsgIdList} -> {ok, MsgIdList}
     end.
+
+-spec load_messages_to_cache(TeamId) -> ok when
+      TeamId :: integer() | binary().
+load_messages_to_cache(TeamId) ->
+    io:format("loading team's messages (team_id=~p)~n", [TeamId]),
+    {ok, Messages} = hs_message_db:list_of_team(TeamId, 0, 3000),
+    lists:map(fun(M) ->
+                      hs_message_cache:save(M),
+                      add_message_id(TeamId, M#message.id)
+              end, Messages),
+    io:format("team's messages loaded (team_id=~p).~n", [TeamId]),
+    ok.

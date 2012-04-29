@@ -1,0 +1,170 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja"> 
+<head>
+<style type="text/css">
+
+element {
+}
+
+</style> 
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" /> 
+<meta http-equiv="Content-style-Type" content="text/css" /> 
+<link rel="stylesheet" href="/shared/css/base.css" type="text/css" /> 
+<link rel="stylesheet" href="/shared/css/buttons.css" type="text/css" /> 
+<link rel="stylesheet" href="/shared/js/highslide-4.1.13/highslide/highslide.css" type="text/css" /> 
+<script type="text/javascript" src="/shared/js/jquery.js"></script>
+<script type="text/javascript" src="/shared/js/highslide-4.1.13/highslide/highslide-full.js"></script>
+<script type="text/javascript" src="/shared/js/hs_util.js"></script>
+<script type="text/javascript" src="/shared/js/team_view_controller.js"></script>
+
+<script type="text/javascript">
+//<![CDATA[
+  window.onload = function() {
+    new HS.TeamViewController().viewDidLoad();
+  }
+  
+    hs.graphicsDir = '/shared/js/highslide-4.1.13/highslide/graphics/';
+	hs.outlineType = 'rounded-white';
+	hs.wrapperClassName = 'draggable-header';
+//]]>
+</script>
+
+<title>HiveSpark</title> 
+</head> 
+<body> 
+<div id="top"> 
+   <div id="header"> 
+      <h1 id="title"></h1> 
+
+      <div id="navi"> 
+         <ul> 
+           <li class="settings"><a href="/usr/edit">設定</a></li> 
+           <li class="logout"><a href="/usr/logout?format=html">ログアウト</a></li>
+         </ul> 
+
+        <div id="profile">
+          <img src="" /><br />
+        </div>
+      
+      </div><!-- navi end --> 
+   </div><!-- header end --> 
+   <div id="menu"> 
+      <ul> 
+        <li><a href="/team/index" class="on">トップ</a></li> 
+      </ul>
+      
+      <ul id="add-new-team-menu" style="display:block; float:right;">
+      </ul>
+       
+   </div><!-- menu end --> 
+   <div id="sub-menu"> 
+      <ul>
+        <li><a href="#" id="team-edit">編集</a></li>
+        <li><a href="#" id="team-upload-icon">アイコン登録</a></li> 
+        <li><a href="javascript:void(0);" id="team-destroy">削除</a></li> 
+      </ul> 
+   </div><!-- sub_menu end --> 
+   
+   <div id="contents"> 
+   
+      <div id="timeline_area">
+        <a href="javascript:void(0)" onclick="return hs.htmlExpand(this)" class="menu_icon"><img src="/shared/images/tweeticon.png" /></a>
+        <div class="highslide-maincontent">
+          <h3>発言</h3>
+          <div id="new-message-form">
+            <textarea id="new-message-text" style="width:300px; height:100px;"></textarea><br />
+            <input type="submit" id="new-message-button" value="登録" />      
+          </div>
+        </div>
+      
+        <a href="javascript:void(0)" class="menu_icon" id="message-refresh_button"><img src="/shared/images/reloadicon.png" /></a>
+        
+        <div id="timeline_scroll">
+          <ul id="timeline"></ul><!-- steps end -->
+        </div><!-- timeline_scroll -->
+      </div>
+
+      
+     <div id="project-information">
+      <img id="team-image" src="" alt="" />
+
+
+        <h2 id="project-name"></h2>
+        <div id="project-description">
+          <p></p>
+        </div>
+        
+        <h3>状況</h3>
+        <div id="team-status">
+          <span></span>
+        </div><div style="clear:both;"></div>
+
+
+      <div id="member-area">
+      	  <ul class="members"></ul>
+      	  <div style="clear:both;"></div>
+      </div>
+      
+      <div style="clear:both;"></div>
+      <hr />
+
+    </div><!-- project_information -->
+
+    <div id="step_area">
+    
+      <h2>問題点および提案</h2>       
+      <a href="#" id="new-ticket-link" onclick="return hs.htmlExpand(this)" class="download-itunes">新規登録</a>
+
+      <div class="highslide-maincontent">
+        <h3>新規チケット登録</h3>
+        <div id="new-ticket-form">
+          <table>
+            <tr>
+              <td><label>タイトル</label></td>
+              <td><input type="text" id="new-ticket-title" value="" style="width:300px;" /></td>
+            </tr>
+            <tr>
+              <td><label>内容</label></td>
+              <td><textarea id="new-ticket-text" style="width:300px;height:150px;"></textarea></td>
+            </tr>
+          </table>
+          <input type="submit" id="new-ticket-button" value="登録" />      
+        </div>
+      </div>
+            
+      <ul id="issues"></ul><!-- steps end --> 
+      <hr />
+
+      <h2>停止中</h2> 
+      <ul class="steps stopping" id="stop-articles"></ul><!-- steps end --> 
+      <hr />
+
+      <h2>開発中</h2> 
+      <ul class="steps" id="active-articles"></ul>
+      <hr />
+
+      <h2>テスト中</h2> 
+      <ul class="steps" id="testing-articles"></ul>
+      <hr />
+
+      <h2>レビュー中</h2> 
+      <ul class="steps" id="closedbeta-articles"></ul>
+      <hr />
+                        
+      <h2>公開済み</h2> 
+      <ul class="steps" id="released-articles"></ul>
+      <hr />
+            
+            
+     </div><!-- step_area -->   
+   </div><!-- contents end --> 
+   <div id="totop"> 
+      <a href="#top">ページのトップへ戻る</a> 
+   </div><!-- totop end --> 
+   <div id="footer"> 
+      <address>Copyright &copy; 2011 HiveSpark All Rights Reserved.</address> 
+   </div><!-- footer end --> 
+</div><!-- top end --> 
+</body> 
+</html>

@@ -13,7 +13,9 @@
 -include("hivespark.hrl").
 
 %% API
--export([q/1, q/2, insert/1, list_of_team/3, list_of_usr/2, to_tuple/1]).
+-export([q/1, q/2, insert/1, lookup_id/1, update/1, 
+         list_of_team/4, list_of_usr/2, 
+         to_tuple/1]).
 
 -export([parse_result/3]).
 
@@ -49,13 +51,14 @@ q(Sql, Params) ->
       Article :: #article{},
       Reason :: atom().
 insert(Article) ->
-    Result =  q("insert into articles (usr_id, team_id, title, text, created_at, 
-                                       lat, lng)
-                   values ($1, $2, $3, $4, $5, $6, $7) returning *",
+    Result =  q("insert into articles (usr_id, team_id, title, text, type, 
+                                       created_at, lat, lng, status)
+                   values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning *",
                 [Article#article.usr_id, Article#article.team_id,
                  Article#article.title, Article#article.text, 
-                 {date(), time()},
-                 Article#article.lat, Article#article.lng]),
+                 Article#article.type, {date(), time()},
+                 Article#article.lat, Article#article.lng,
+                 Article#article.status]),
 
     case Result of
         {ok, [NewArticle]} -> {ok, NewArticle};
@@ -63,25 +66,64 @@ insert(Article) ->
         {error, Reason} -> {error, Reason}
     end.
 
--spec list_of_team(TeamId, Offset, Count) -> {ok, Articles} | {error, Reason} when
+-spec lookup_id(ArticleId) -> {ok, Article} | {error, not_found} when
+      ArticleId :: binary() | integer(),
+      Article :: #article{}.
+lookup_id(ArticleId) when is_binary(ArticleId) ->
+    lookup_id(list_to_integer(binary_to_list(ArticleId)));
+
+lookup_id(ArticleId) when is_integer(ArticleId)->
+    case q("select * from articles where id = $1 limit 1", [ArticleId]) of
+        {ok, [Article]} -> {ok, Article};
+        {ok, []} -> {error, not_found}
+    end.
+
+-spec update(Article) -> {ok, UpdatedArticle} | {error, Reason} when
+      Article :: #article{},
+      UpdatedArticle :: #article{},
+      Reason :: atom().
+update(Article) ->
+    Result = q("update articles set usr_id = $2, team_id = $3,
+                                    title = $4, text = $5, type = $6,
+                                    lat = $7, lng = $8, status = $9,
+                                    progress = $10
+                  where id = $1
+                  returning *",
+              [Article#article.id, 
+               Article#article.usr_id, Article#article.team_id,
+               Article#article.title, Article#article.text, 
+               Article#article.type, 
+               Article#article.lat, Article#article.lng,
+               Article#article.status, Article#article.progress]),
+
+    case Result of
+        {ok, [Record]} -> {ok, Record};
+        {ok, []} -> {error, not_found};
+        {error, Reason} -> {error, Reason}
+    end.
+
+-spec list_of_team(TeamId, Offset, Count, Status) -> {ok, Articles} | {error, Reason} when
       TeamId :: integer() | binary(),
       Offset :: integer() | binary(),
       Count :: integer() | binary(),
+      Status :: integer() | binary(),
       Articles :: [#article{}],
       Reason :: atom().      
-list_of_team(TeamId, Offset, Count) when is_binary(TeamId) and
-                                         is_binary(Offset) and
-                                         is_binary(Count) ->
+list_of_team(TeamId, Offset, Count, Status) when is_binary(TeamId) and
+                                                 is_binary(Offset) and
+                                                 is_binary(Count) ->
     list_of_team(list_to_integer(binary_to_list(TeamId)),
                  list_to_integer(binary_to_list(Offset)),
-                 list_to_integer(binary_to_list(Count)));
+                 list_to_integer(binary_to_list(Count)),
+                 list_to_integer(binary_to_list(Status)));
 
-list_of_team(TeamId, Offset, Count) when is_integer(TeamId) and
-                                 is_integer(Offset) and
-                                 is_integer(Count)->
-    q("select * from articles where team_id = $1
-         order by id desc limit $2 offset $3", 
-      [TeamId, Count, Offset]).
+list_of_team(TeamId, Offset, Count, Status) when is_integer(TeamId) and
+                                                 is_integer(Offset) and
+                                                 is_integer(Count) and
+                                                 is_integer(Status) ->
+    q("select * from articles where team_id = $1 and status = $2
+         order by id desc limit $3 offset $4", 
+      [TeamId, Status, Count, Offset]).
     
 -spec list_of_usr(UsrId, Count) -> {ok, Articles} | {error, Reason} when
       UsrId :: integer() | binary(),
@@ -113,7 +155,9 @@ to_tuple(Article) ->
         
     {[{id, Article#article.id}, {usr, hs_usr:to_tuple(Usr)},
       {team, hs_team:to_tuple(Team)}, {title, Article#article.title},
-      {text, Article#article.text}, {created_at, DateTime},
+      {text, Article#article.text}, {type, Article#article.type}, 
+      {status, Article#article.status}, {progress, Article#article.progress},
+      {created_at, DateTime},
       {lat, Article#article.lat}, {lng, Article#article.lng}]}.
 
 %%--------------------------------------------------------------------
@@ -143,6 +187,9 @@ parse_record([Column | CTail], [Value | VTail], Result) ->
                   <<"team_id">> -> Result#article{team_id = Value};
                   <<"title">> -> Result#article{title = Value};
                   <<"text">> -> Result#article{text = Value};
+                  <<"type">> -> Result#article{type = Value};
+                  <<"status">> -> Result#article{status = Value};
+                  <<"progress">> -> Result#article{progress = Value};
                   <<"created_at">> -> Result#article{created_at = Value};
                   <<"lat">> -> Result#article{lat = Value};
                   <<"lng">> -> Result#article{lng = Value}

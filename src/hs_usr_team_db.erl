@@ -13,7 +13,7 @@
 -include("hivespark.hrl").
 
 %% API
--export([q/1, q/2, get_teams_usrs/1]).
+-export([q/1, q/2, get_teams_usrs/1, delete_teams_usrs/1]).
 
 %%%===================================================================
 %%% API
@@ -50,7 +50,7 @@ q(Sql, Params) ->
 -spec get_teams_usrs(TeamId) -> {ok, [#usr{}]} | {error, Reason} when
       TeamId :: integer(),
       Reason :: atom().
-get_teams_usrs(TeamId) ->
+get_teams_usrs(TeamId) when is_integer(TeamId) ->
     Result =  postgres_pool:equery(?DB, "select u.* from usrs u, usrs_teams ut
                                            where team_id = $1 and
                                                  ut.usr_id = u.id
@@ -62,6 +62,20 @@ get_teams_usrs(TeamId) ->
             {ok, hs_usr_db:parse_result(Columns, Values, [])}
     end.
 
+%%--------------------------------------------------------------------
+%% @doc delete usrs from team_id.
+%% @end
+%%--------------------------------------------------------------------
+-spec delete_teams_usrs(TeamId) -> {ok, deleted} | {error, Reason} when
+      TeamId :: integer(),
+      Reason :: atom().
+delete_teams_usrs(TeamId) when is_integer(TeamId) ->
+    Result = q("delete from usrs_teams where team_id = $1", [TeamId]),
+
+    case Result of
+        {error, Reason} -> {error, Reason};
+        ok -> {ok, deleted}
+    end.
 
 %%%===================================================================
 %%% Internal functions

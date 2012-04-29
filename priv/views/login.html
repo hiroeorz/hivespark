@@ -1,0 +1,85 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja"> 
+<head>
+<style type="text/css">
+
+element {
+}
+
+</style> 
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" /> 
+<meta http-equiv="Content-style-Type" content="text/css" /> 
+<link rel="stylesheet" href="/shared/css/base.css" type="text/css" />
+<title>HiveSpark</title>  
+</head> 
+<body> 
+<div id="top"> 
+   <div id="header"> 
+      <h1 id="title"></h1> 
+
+      <div id="navi"> 
+         <ul> 
+         <li class="settings"><a href="">設定</a></li> 
+         <li class="logout"><a href="/usr/logout?format=html">ログアウト</a></li>
+         </ul> 
+      </div><!-- navi end --> 
+   </div><!-- header end --> 
+   <div id="menu"> 
+      <ul> 
+      <li><a href="#" class="on">ログイン</a></li> 
+      </ul> 
+   </div><!-- menu end --> 
+   <div id="contents"> 
+	  
+	<div style="width:302px; margin:0 auto 0 auto; margin-top: 50px; text-align:center;">
+	<form action="/auth/login" 
+	      method="post" 
+	      accept-charset="utf-8"
+	      id="user-login-form">
+	  
+	  <div>
+	    <input type="hidden" name="_method" value="PUT" />
+	  </div>
+	  <div style="width:302px;">
+	    <div class="login-title">
+	      ログイン
+	    </div>
+	    <div class="login-form-top">
+	      <div class="formRow">
+		<label>ユーザID<br />
+		  <input type="text" 
+			 name="username" 
+			 value="" id="username" /></label>
+	      </div> <!-- close: formRow -->	
+	      <div class="formRow">
+		<label>パスワード<br />
+		  <input type="password" 
+			 name="password" 
+			 value="" id="password" /></label>
+	      </div> <!-- close: formRow -->
+	      
+	      <input type="hidden" name="format" value="html" />
+	      <div class="formRow">
+		<input type="submit" 
+		       name="Submit" 
+		       value="ログイン" id="Submit" />
+	      </div> <!-- close: formRow -->
+	    </div>
+	  </div>
+	</form>
+	
+	<a href="/usr_public/new">新規ユーザ登録</a>
+    </div>
+    
+      
+   </div><!-- contents end --> 
+   <div id="totop"> 
+      <a href="#top">ページのトップへ戻る</a> 
+   </div><!-- totop end --> 
+   <div id="footer"> 
+      <address>Copyright &copy; 2009 YOUR SITE NAME All Rights Reserved.</address> 
+   </div><!-- footer end --> 
+</div><!-- top end --> 
+</body> 
+</html>

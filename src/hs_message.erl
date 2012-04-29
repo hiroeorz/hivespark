@@ -35,14 +35,13 @@
       Reason :: atom().
 save(Message=#message{usr_id=UsrId, team_id=_TeamId, text=Text}) when 
       is_binary(Text) ->
-    MsgId = get_next_id(UsrId),
-    NewMessage = Message#message{id=list_to_binary(MsgId), 
+    
+    NewMessage = Message#message{id = get_next_id(UsrId),
                                  created_at={date(), time()}},
-    Key = get_key(MsgId),
 
-    case eredis_pool:q(?DB_SRV, ["SET", Key, term_to_binary(NewMessage)]) of
-        {ok, <<"OK">>} -> {ok, NewMessage};
-        {error, Reason} -> {error, Reason}
+    case hs_message_db:insert(NewMessage) of
+        {error, Reason} -> {error, Reason};
+        {ok, NewMessage2} -> hs_message_cache:save(NewMessage2)
     end.
 
 %%--------------------------------------------------------------------
@@ -50,13 +49,13 @@ save(Message=#message{usr_id=UsrId, team_id=_TeamId, text=Text}) when
 %% @end
 %%--------------------------------------------------------------------
 -spec get_msg(Id) -> {ok, Message} | {error, Reason} when
-      Id :: integer(),
+      Id :: integer() | binary(),
       Message :: #message{},
       Reason :: atom().
 get_msg(MsgId) ->
     Key = get_key(MsgId),
     case eredis_pool:q(?DB_SRV, ["GET", Key]) of 
-        {ok, undefined} -> {error, not_found};
+        {ok, undefined} -> hs_message_db:get_msg(MsgId);
         {ok, MsgBin} -> {ok, binary_to_term(MsgBin)}
     end.
 
@@ -80,7 +79,25 @@ mget_msg(MsgIdList) when is_list(MsgIdList) ->
                                      end 
                              end, 
                              MsgBinList),
-            lists:delete(undefined, List)
+            NewList = lists:delete(undefined, List),
+            repaire_msg_list_from_db(MsgIdList, NewList, [])
+    end.
+
+repaire_msg_list_from_db([], _, Results) ->
+    lists:reverse(Results);
+
+repaire_msg_list_from_db([MsgId | IdTail], [Msg | MsgTail], Results) ->
+    case Msg of
+        undefined ->
+            case hs_message_db:get_msg(MsgId) of
+                {ok, NewMsg} ->
+                    spawn(fun() -> hs_message_cache:save(NewMsg) end),
+                    repaire_msg_list_from_db(IdTail, MsgTail, [NewMsg | Results]);
+                {error, _} ->
+                    repaire_msg_list_from_db(IdTail, MsgTail, Results)
+            end;
+        OkMsg ->
+            repaire_msg_list_from_db(IdTail, MsgTail, [OkMsg | Results])
     end.
 
 %%--------------------------------------------------------------------
@@ -108,6 +125,9 @@ get_key(MsgId) when is_binary(MsgId) ->
 get_key(MsgId) ->
     list_to_binary(lists:flatten([?MSG_KEY_HEADER, MsgId])).
 
+-spec get_next_id(UsrId) -> MessageId when
+      UsrId :: integer() | binary() | string(),
+      MessageId :: binary().
 get_next_id(UsrId) when is_integer(UsrId)->
     get_next_id(integer_to_list(UsrId));
 
@@ -120,5 +140,5 @@ get_next_id(UsrId) when is_list(UsrId) ->
 
     UsrPart = string:right(UsrId, ?MSGID_USR_PART_LENGTH, $0),
     MsgPart = string:right(binary_to_list(BinVal), ?MSGID_MSG_PART_LENGTH, $0),
-    lists:flatten([UsrPart, MsgPart]).
+    list_to_binary(lists:flatten([UsrPart, MsgPart])).
 

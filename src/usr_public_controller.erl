@@ -13,11 +13,14 @@
 -include("hivespark.hrl").
 
 %% API
--export([create/3]).
+-export([new/3, create/3]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
+
+new(_ParamList, _Req, State) ->
+    hs_util:view("create_user.html", State).
 
 %% 新規ユーザ登録
 create(ParamList, _Req, State) ->
@@ -27,9 +30,10 @@ create(ParamList, _Req, State) ->
     Password = proplists:get_value(<<"password">>, ParamList),
     IconUrl = proplists:get_value(<<"icon_url">>, ParamList),
     Description = proplists:get_value(<<"description">>, ParamList),
+    Format = proplists:get_value(<<"format">>, ParamList),
 
     Result = hs_usr:create(Name, LongName, Mail, Password, IconUrl, 
-                                  Description),
+                           Description),
 
     Reply = case Result of
                 {ok, Usr} -> 
@@ -40,7 +44,12 @@ create(ParamList, _Req, State) ->
                      {<<"reason">>, list_to_binary(atom_to_list(Reason))}]
             end,
 
-    {200, [], jiffy:encode({Reply}), State}.
+    case Format of
+        <<"html">> ->
+            hs_util:redirect_to("/auth/index", State);
+        _ ->
+            hs_util:ok(jiffy:encode({Reply}), State)
+    end.
 
 %%%===================================================================
 %%% Internal functions

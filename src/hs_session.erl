@@ -19,7 +19,7 @@
 
 %% gen_server callbacks
 -export([create/1, get_value/2, set_value/3, del_value/2, get_usr/1, 
-         check_loggedin/2]).
+         check_loggedin/2, abandon/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
@@ -103,12 +103,15 @@ get_usr(SessionKey) ->
 -spec check_loggedin(UsrId, SessionKey) -> true | false when
       UsrId :: binary() | integer(),
       SessionKey :: binary().
+check_loggedin(undefined, undefined) -> false;
+
 check_loggedin(UsrId, SessionKey) when is_integer(UsrId) ->
     check_loggedin(list_to_binary(integer_to_list(UsrId)), SessionKey);
 
 check_loggedin(UsrId, SessionKey) when is_binary(UsrId) ->
     case get_value(SessionKey, <<"usr_id">>) of
         undefined -> false;
+        {error, not_found} -> false;
         {ok, UsrIdFromSession} ->
             case UsrIdFromSession of
                 UsrId -> true;
@@ -126,6 +129,16 @@ check_loggedin(UsrId, SessionKey) when is_binary(UsrId) ->
       Else :: tuple().
 create(Usr) ->
     gen_server:call(?SERVER, {create, Usr}).
+
+%%--------------------------------------------------------------------
+%% @doc delete session.
+%% @end
+%%--------------------------------------------------------------------
+-spec abandon(SessionKey) -> ok when
+      SessionKey :: binary().
+abandon(SessionKey) ->
+    {ok, _} = eredis_pool:q(?DB_SRV, ["DEL", SessionKey]),
+    ok.
 
 %%%===================================================================
 %%% gen_server callbacks

@@ -1,0 +1,123 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja"> 
+<head>
+<style type="text/css">
+
+element {
+}
+
+</style> 
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" /> 
+<meta http-equiv="Content-style-Type" content="text/css" /> 
+<link rel="stylesheet" href="/shared/css/base.css" type="text/css" />
+<script type="text/javascript" src="/shared/js/jquery.js"></script>
+<script type="text/javascript" src="/shared/js/hs_util.js"></script>
+<script type="text/javascript" src="/shared/js/team_edit_view_controller.js"></script>
+
+<script type="text/javascript">
+//<![CDATA[
+  window.onload = function() {
+    new HS.TeamEditViewController().viewDidLoad();
+  }
+//]]>
+</script>
+
+
+<title>HiveSpark</title> 
+</head> 
+<body> 
+<div id="top"> 
+   <div id="header"> 
+      <h1 id="title"></h1> 
+
+      <div id="navi"> 
+         <ul> 
+         <li class="settings"><a href="">設定</a></li> 
+         <li class="logout"><a href="/usr/logout?format=html">ログアウト</a></li>
+         </ul> 
+      </div><!-- navi end --> 
+   </div><!-- header end --> 
+   
+   <div id="menu"> 
+      <ul> 
+        <li><a href="/team/index" class="on">トップ</a></li> 
+      </ul>
+      
+      <ul id="add-new-team-menu" style="display:block; float:right;">
+      </ul>
+       
+   </div><!-- menu end --> 
+   
+   <div id="sub-menu"> 
+      <ul>
+        <li><a href="#" id="team-show">戻る</a></li> 
+      </ul> 
+   </div><!-- sub_menu end -->      
+   
+   <div id="contents"> 
+	  
+	<div style="width:302px; margin:0 auto 0 auto; margin-top: 50px; text-align:center;">
+	<form action="/team/update" 
+	      method="post" 
+	      accept-charset="utf-8"
+	      id="user-login-form">
+	  
+	  <div>
+	    <input type="hidden" name="_method" value="post" />
+	  </div>
+	  <div style="width:302px;">
+
+	    <div class="login-title">
+	      チーム編集
+	    </div>
+	    
+	    <div class="login-form-top">
+	    
+	      <div class="formRow">
+		    <label>チーム名<br />
+		      <input type="text" name="name" value="" id="name" />
+		    </label>
+	      </div> 	
+
+	      <div class="formRow">
+		    <label>紹介</label><br />
+		      <textarea name="description" id="description" style="width: 200px; height:100px;"></textarea>
+            </label>
+	      </div> 
+
+	      <div class="formRow">
+		    <label>現在の状況</label><br />
+		      <textarea name="status_description" id="status_description" style="width: 200px; height:100px;"></textarea>
+            </label>
+	      </div> 
+	    
+	      <label>状況
+	        <select name="status">
+	          <option value="1" id="status-2">開発中</option>
+	          <option value="0" id="status-0">停止中</option>
+	        </select>
+	      </label>
+	    
+	      <input type="hidden" name="team_id" id="team_id" value=""/> 	      	      
+	      <input type="hidden" name="format" value="html" />  
+
+	      <div class="formRow">
+		    <input type="submit" name="Submit" value="保存" id="Submit" />
+	      </div> <!-- close: formRow -->
+	    </div>
+	  </div>
+	</form>
+    </div>
+    
+      
+   </div><!-- contents end --> 
+   <div id="totop"> 
+      <a href="#top">ページのトップへ戻る</a> 
+   </div><!-- totop end --> 
+   <div id="footer"> 
+      <address>Copyright &copy; 2009 YOUR SITE NAME All Rights Reserved.</address> 
+   </div><!-- footer end --> 
+</div><!-- top end --> 
+</body> 
+</html>

@@ -8,16 +8,80 @@
 %%%-------------------------------------------------------------------
 -module(hs_util).
 
+%% Include
+-include_lib("eunit/include/eunit.hrl").
+-include("hivespark.hrl").
+
 %% API
 -export([]).
--export([ext_part/1, ext_type/1, get_multi_data/1, acc_multipart/2,
-        create_datetime_string/1]).
+-export([view/2, view/3, ok/2, ok/3, not_found/1, not_found/2,
+         forbidden/1, forbidden/2,
+         not_authenticated/1, not_authenticated/2, not_authenticated/3,
+         redirect_to/2, redirect_to/3,
+         priv_dir/0, ext_part/1, ext_type/1, 
+         get_multi_data/1, get_param_data/2, acc_multipart/2,
+         create_datetime_string/1]).
 
 -define(MultiPartDataPattern, [{<<"Content-Disposition">>, <<"form-data; name=\"fileName\"; filename=", _N/binary>>}, {'Content-Type', Type}]).
+
+-define(MultiPartParamPattern, [{<<"Content-Disposition">>,<<"form-data; name=\"", N/binary>>}]).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
+
+view(Filename, State) ->
+    view(Filename, State, 200).
+
+view(Filename, State, StatusCode) ->
+    Path = hs_util:priv_dir() ++ "/views/" ++ Filename,
+    ?debugVal(Path),
+    case file:read_file(Path) of
+        {ok, Binary} -> {StatusCode, [], Binary, State};
+        {error, enoent} -> not_found(State)
+    end.
+
+ok(Body, State) when is_binary(Body) ->
+    {200, [], Body, State}.
+
+ok(Header, Body, State) when is_list(Header) and is_binary(Body) ->
+    {200, Header, Body, State}.
+
+redirect_to(Url, State) ->
+    redirect_to(Url, [], State).
+
+redirect_to(Url, Header, State) when is_list(Header) ->
+    {307, [{'Location', Url} | Header], <<"">>, State}.
+
+not_found(State) ->
+    not_found("page not found", State).
+
+not_found(Body, State) ->
+    {404, [], Body, State}.
+
+not_authenticated(State) ->
+    not_authenticated(<<"">>, State).
+
+not_authenticated(Body, State) ->
+    not_authenticated([], Body, State).
+
+not_authenticated(Header, Body, State) ->
+    {401, Header, Body, State}.
+
+forbidden(State) ->
+    not_found("forbidden", State).
+
+forbidden(Body, State) ->
+    {403, [], Body, State}.
+
+priv_dir() ->
+    case code:priv_dir(?APP) of
+        {error, bad_name} ->
+            {ok, Cwd} = file:get_cwd(),
+            Cwd ++ "/" ++ "priv/";
+        Priv ->
+            Priv ++ "/"
+    end.
 
 ext_part(<<"image/png">>) -> ".png";
 ext_part(<<"image/jpeg">>) -> ".jpg";
@@ -32,6 +96,17 @@ get_multi_data([{Headers, Data}| Tail]) ->
     case Headers of
         ?MultiPartDataPattern -> {ok, Data, Type};
         _ -> get_multi_data(Tail)
+    end.
+
+get_param_data([], Params) -> Params;
+get_param_data([{Headers, Data}| Tail], Params) ->
+    case Headers of
+        ?MultiPartParamPattern -> 
+            N2 = list_to_binary(re:replace(binary_to_list(N), "\"", "", 
+                                           [{return, list}])),
+            get_param_data(Tail, [{N2, Data} | Params]);
+        _ -> 
+            get_param_data(Tail, Params)
     end.
 
 acc_multipart(Req, Acc) ->

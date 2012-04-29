@@ -13,7 +13,8 @@
 -include("hivespark.hrl").
 
 %% API
--export([show/4, image/4, save_image/4]).
+-export([logout/4, show_myself/4, show/4, image/4, save_image/4,
+         edit/4, update/4]).
 
 -define(ICON_DIR, "/Users/shin/var/hivespark_images/").
 
@@ -26,6 +27,30 @@
 %% @spec
 %% @end
 %%--------------------------------------------------------------------
+
+edit(_ParamList, _Req, State, _SessionKey) ->
+    hs_util:view("usr_edit.html", State).
+
+logout(ParamList, _Req, State, SessionKey) ->
+    Format = proplists:get_value(<<"format">>, ParamList),
+    ok = hs_session:abandon(SessionKey),
+
+    Cookie1 = cowboy_cookies:cookie(<<"session_key">>, <<"">>,
+                                    [{path, <<"/">>}]),
+    Cookie2 = cowboy_cookies:cookie(<<"usr_id">>, <<"">>,
+                                    [{path, <<"/">>}]),
+
+    case Format of
+        <<"html">> ->
+            hs_util:redirect_to("/auth/index", [Cookie1, Cookie2], State);
+        _ ->
+            hs_util:ok([Cookie1, Cookie2], jiffy:encode({[{result, true}]}), State)
+    end.
+    
+show_myself(_ParamList, _Req, State, SessionKey) ->
+    Usr = hs_session:get_usr(SessionKey),
+    Reply = {[{usr, hs_usr:to_tuple(Usr)}]},
+    hs_util:ok(jiffy:encode(Reply), State).
 
 show(ParamList, _Req, State, _SessionKey) ->
     UsrId = proplists:get_value(<<"usr_id">>, ParamList),
@@ -47,17 +72,39 @@ show(ParamList, _Req, State, _SessionKey) ->
              end,
     
     case Result of
-        {ok, Reply} -> {200, jiffy:encode(Reply), State};
-        {not_found, ErrorReply} -> {404, jiffy:encode(ErrorReply), State}
+        {ok, Reply} -> hs_util:ok(jiffy:encode(Reply), State);
+        {not_found, ErrorReply} -> 
+            hs_util:not_found(jiffy:encode(ErrorReply), State)
     end.
+
+update(ParamList, _Req, State, SessionKey) ->
+    Usr = hs_session:get_usr(SessionKey),
+    Name = proplists:get_value(<<"name">>, ParamList),
+    LongName = proplists:get_value(<<"longname">>, ParamList),
+    EMail = proplists:get_value(<<"email">>, ParamList),
+    Description = proplists:get_value(<<"description">>, ParamList),
+    Format = proplists:get_value(<<"format">>, ParamList),
+
+    Usr1 = Usr#usr{name=Name, longname=LongName, email=EMail,
+                   description=Description},
+    {ok, Usr2} = hs_usr:update(Usr1),
+    Reply = {[{<<"result">>, true}, {usr, hs_usr:to_tuple(Usr2)}]},
+
+    case Format of
+        <<"html">> ->
+            hs_util:redirect_to("/team/index", State);
+        _ ->
+            hs_util:ok(jiffy:encode(Reply), State)
+    end.
+
 
 image(ParamList, _Req, State, _SessionKey) ->
     FName = proplists:get_value(<<"fname">>, ParamList),
     Path = lists:flatten([?ICON_DIR, binary_to_list(FName)]),
 
     case file:read_file(Path) of
-        {ok, Binary} -> {200, Binary, State};
-        {error, enoent} -> {404, "image not found", State}
+        {ok, Binary} -> hs_util:ok(Binary, State);
+        {error, enoent} -> hs_util:not_found("image not found", State)
     end.
 
 save_image(_ParamList, Req, State, SessionKey) ->
@@ -67,7 +114,7 @@ save_image(_ParamList, Req, State, SessionKey) ->
     Result = case hs_util:get_multi_data(Results) of
                  {error, not_found} -> error;
                  {ok, Data, Type} ->
-                     FName = binary_to_list(Usr#usr.name),
+                     FName = integer_to_list(Usr#usr.id),
                      Ext = hs_util:ext_part(Type),
                      Path = lists:flatten([?ICON_DIR, FName, Ext]),
                      ok = file:write_file(Path, Data),
@@ -85,7 +132,7 @@ save_image(_ParamList, Req, State, SessionKey) ->
                 _ -> {[{result, <<"failure">>}]}
             end,
 
-    {200, jiffy:encode(Reply), State}.
+    hs_util:ok(jiffy:encode(Reply), State).
 
 %%%===================================================================
 %%% Internal functions

@@ -1,0 +1,79 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja"> 
+<head>
+<style type="text/css">
+
+element {
+}
+
+</style> 
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" /> 
+<meta http-equiv="Content-style-Type" content="text/css" /> 
+<link rel="stylesheet" href="/shared/css/base.css" type="text/css" />
+<link rel="stylesheet" href="/shared/css/buttons.css" type="text/css" />
+<script type="text/javascript" src="/shared/js/jquery.js"></script>
+<script type="text/javascript" src="/shared/js/hs_util.js"></script>
+<script type="text/javascript" src="/shared/js/team_list_view_controller.js"></script>
+
+<script type="text/javascript">
+//<![CDATA[
+  window.onload = function() {
+    new HS.TeamListViewController().viewDidLoad();
+  }
+//]]>
+</script>
+
+<title>HiveSpark</title>  
+</head> 
+<body> 
+<div id="top"> 
+   <div id="header"> 
+      <h1 id="title"></h1> 
+
+      <div id="navi"> 
+         <ul>  
+           <li class="settings"><a href="/usr/edit">設定</a></li> 
+           <li class="logout"><a href="/usr/logout?format=html">ログアウト</a></li>
+         </ul> 
+         
+        <div id="profile">
+          <img src="" /><br />
+        </div>
+                 
+      </div><!-- navi end --> 
+   </div><!-- header end --> 
+   <div id="menu"> 
+      <ul> 
+        <li><a href="#" class="on">トップ</a></li> 
+      </ul> 
+      
+      <ul style="display:block; float:right;">
+        <li><a href="/team/new" class="thoughtbot">新規チーム</a></li>
+      </ul>
+   </div><!-- menu end --> 
+   <div id="contents"> 
+         
+      <h2>開発中</h2> 
+      <div id="participation">
+        <ul class="pola" id="burning-teams"></ul>
+        <div style="clear:both;"></div>
+      </div>
+      
+      <div style="clear:both;"></div>
+      <hr />
+
+      <h2>停止中</h2><ul class="pola" id="stop-teams"></ul>
+      
+      <!-- pola end --> 
+            
+   </div><!-- contents end --> 
+   <div id="totop"> 
+      <a href="#top">ページのトップへ戻る</a> 
+   </div><!-- totop end --> 
+   <div id="footer"> 
+      <address>Copyright &copy; 2011 HiveSpark All Rights Reserved.</address> 
+   </div><!-- footer end --> 
+</div><!-- top end --> 
+</body> 
+</html>

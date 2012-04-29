@@ -1,0 +1,131 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja"> 
+<head>
+<style type="text/css">
+
+element {
+}
+
+</style> 
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" /> 
+<meta http-equiv="Content-style-Type" content="text/css" /> 
+<link rel="stylesheet" href="/shared/css/base.css" type="text/css" /> 
+<link rel="stylesheet" href="/shared/js/highslide-4.1.13/highslide/highslide.css" type="text/css" /> 
+<script type="text/javascript" src="/shared/js/jquery.js"></script>
+<script type="text/javascript" src="/shared/js/highslide-4.1.13/highslide/highslide-full.js"></script>
+<script type="text/javascript" src="/shared/js/hs_util.js"></script>
+<script type="text/javascript" src="/shared/js/usr_edit_view_controller.js"></script>
+
+<script type="text/javascript">
+//<![CDATA[
+  window.onload = function() {
+    new HS.UsrEditViewController().viewDidLoad();
+  }
+  
+    hs.graphicsDir = '/shared/js/highslide-4.1.13/highslide/graphics/';
+	hs.outlineType = 'rounded-white';
+	hs.wrapperClassName = 'draggable-header';
+//]]>
+</script>
+
+<title>HiveSpark</title> 
+</head> 
+<body> 
+<div id="top"> 
+   <div id="header"> 
+      <h1 id="title"></h1> 
+
+      <div id="navi"> 
+         <ul> 
+           <li class="settings"><a href="">設定</a></li> 
+           <li class="logout"><a href="/usr/logout?format=html">ログアウト</a></li>
+         </ul> 
+
+        <div id="profile">
+          <img src="" /><br />
+        </div>
+      
+      </div><!-- navi end --> 
+   </div><!-- header end --> 
+   <div id="menu"> 
+      <ul> 
+        <li><a href="/team/index" class="on">トップ</a></li> 
+      </ul>
+      
+      <ul id="add-new-team-menu" style="display:block; float:right;">
+      </ul>
+       
+   </div><!-- menu end --> 
+   <div id="sub-menu"> 
+      <ul>
+        <li><a href="#" id="team-edit">編集</a></li>
+        <li><a href="#" id="team-upload-icon">アイコン登録</a></li> 
+      </ul> 
+   </div><!-- sub_menu end --> 
+   
+   <div id="contents"> 
+      
+	<div style="width:302px; margin:0 auto 0 auto; margin-top: 50px; text-align:center;">
+	<form action="/usr/update" 
+	      method="post" 
+	      accept-charset="utf-8"
+	      id="user-login-form">
+	  
+	  <div>
+	    <input type="hidden" name="_method" value="post" />
+	  </div>
+	  <div style="width:302px;">
+	    <div class="login-title">
+	      ユーザ設定
+	    </div>
+	    <div class="login-form-top">
+	    
+	      <div class="formRow">
+		<label>ユーザID<br />
+		  <input type="text" b
+			 name="name" 
+			 value="" id="name" /></label>
+	      </div> <!-- close: formRow -->	
+
+	      <div class="formRow">
+		<label>名前<br />
+		  <input type="text" 
+			 name="longname" 
+			 value="" id="longname" /></label>
+	      </div> <!-- close: formRow -->
+
+	      <div class="formRow">
+		<label>E-Mail<br />
+		  <input type="text" 
+			 name="email" 
+			 value="" id="email" /></label>
+	      </div> <!-- close: formRow -->
+	      
+	    <div class="formRow">
+		  <label>自己紹介</label><br />
+		    <textarea name="description" id="description" style="width: 200px; height:100px;"></textarea>
+          </label>
+	    </div> <!-- close: formRow -->
+	      	      
+	    <input type="hidden" name="format" value="html" />  
+	    <div class="formRow">
+		<input type="submit" 
+		       name="Submit" 
+		       value="保存" id="Submit" />
+	      </div> <!-- close: formRow -->
+	    </div>
+	  </div>
+	</form>
+    </div>
+                   
+   </div><!-- contents end --> 
+   <div id="totop"> 
+      <a href="#top">ページのトップへ戻る</a> 
+   </div><!-- totop end --> 
+   <div id="footer"> 
+      <address>Copyright &copy; 2011 HiveSpark All Rights Reserved.</address> 
+   </div><!-- footer end --> 
+</div><!-- top end --> 
+</body> 
+</html>

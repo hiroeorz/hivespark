@@ -13,7 +13,7 @@
 -include("hivespark.hrl").
 
 %% API
--export([login/3]).
+-export([index/3, login/3]).
 
 %%%===================================================================
 %%% API
@@ -25,9 +25,13 @@
 %% @end
 %%--------------------------------------------------------------------
 
+index(_ParamList, _Req, State) ->
+    hs_util:view("login.html", State).
+
 login(ParamList, _Req, State) ->
     Username = proplists:get_value(<<"username">>, ParamList),
     Password = proplists:get_value(<<"password">>, ParamList),
+    Format = proplists:get_value(<<"format">>, ParamList),
     io:format("username:~s password:~s", [Username, Password]),
     Auth = hs_usr:authenticate(Username, Password),
 
@@ -46,12 +50,23 @@ login(ParamList, _Req, State) ->
             UsrIdBin = list_to_binary(integer_to_list(UsrId)),
             Cookie2 = cowboy_cookies:cookie(<<"usr_id">>, UsrIdBin,
                                            [{path, <<"/">>}]),
-
-            {200, [Cookie1, Cookie2], jiffy:encode({Reply}), State};
+            
+            case Format of
+                <<"html">> ->
+                    hs_util:redirect_to("/team/index", [Cookie1, Cookie2], State);
+                _ ->
+                    hs_util:ok([Cookie1, Cookie2], jiffy:encode({Reply}), State)
+            end;
         Else ->
             ?debugVal(Else),
             Reply = [{status, false}, {message, list_to_binary("認証失敗")}],
-            {401, [], jiffy:encode({Reply}), State}
+
+            case Format of
+                <<"html">> ->
+                    hs_util:not_authenticated(State);
+                _ ->
+                    hs_util:not_authenticated(jiffy:encode({Reply}), State)
+            end
     end.
 
 %%%===================================================================

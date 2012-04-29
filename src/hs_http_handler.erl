@@ -51,8 +51,7 @@ handle(Req, State) ->
                 end
         end,
 
-    ?debugVal(PathList),
-    ?debugVal(ParamList),
+    ?debugVal(PathList), ?debugVal(ParamList),
 
     case PathList of
         [Controller, Action | _] ->
@@ -77,9 +76,7 @@ handle(Req, State) ->
       NewState :: tuple().
 
 handle(C, A, ParamList, Req, State) when ?AUTHENTICATED_ROUTE ->
-    io:format("secure route"),
     {Cookies, _} = cowboy_http_req:cookies(Req),
-    %%?debugVal(Cookies),
 
     UsrId = proplists:get_value(<<"usr_id">>, Cookies),
     SessionKey = proplists:get_value(<<"session_key">>, Cookies),
@@ -88,22 +85,29 @@ handle(C, A, ParamList, Req, State) when ?AUTHENTICATED_ROUTE ->
     {Req2, NewState} = 
         case Loggedin of
             true -> 
-                M = list_to_atom(lists:flatten([binary_to_list(C), 
-                                                "_controller"])),
+                M = list_to_atom(lists:flatten([binary_to_list(C), "_controller"])),
                 F = list_to_atom(binary_to_list(A)),
-                {StatusCode, Bin, NS} = M:F(ParamList, Req, State, SessionKey),
-                {reply(StatusCode, [], Bin, Req), NS};
+                case M:F(ParamList, Req, State, SessionKey) of
+                    {StatusCode, H, Bin, NS} ->
+                        {reply(StatusCode, H, Bin, Req), NS};
+                    {StatusCode, Bin, NS} ->
+                        {reply(StatusCode, [], Bin, Req), NS}
+                end;
             false ->
-                {reply(401, Req), State}
+                {StatusCode, H, B, NS} = hs_util:redirect_to("/auth/index", 
+                                                             [], State),
+                {reply(StatusCode, H, B, Req), NS}
         end,
     {ok, Req2, NewState};
 
 handle(C, A, ParamList, Req, State) when ?ROUTE ->
-    io:format("public route"),
     M = list_to_atom(lists:flatten([binary_to_list(C), "_controller"])),
     F = list_to_atom(binary_to_list(A)),
-    {StatusCode, H, Bin, NewState} = M:F(ParamList, Req, State),
-    Req2 = reply(StatusCode, H, Bin, Req),
+
+    Req2 = case M:F(ParamList, Req, State) of
+               {StatusCode, H, Bin, NewState} -> reply(StatusCode, H, Bin, Req);
+               {StatusCode, Bin, NewState} -> reply(StatusCode, [], Bin, Req)
+           end,
     {ok, Req2, NewState};
 
 handle(_, _, _, Req, State) ->

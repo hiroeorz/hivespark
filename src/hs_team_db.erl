@@ -14,7 +14,9 @@
 
 %% API
 -export([q/1, q/2,
-         all/0, insert/4, list/1, lookup_id/1, lookup_name/1, update/1, delete/1]).
+         all/0, insert/4, list/1, statuses_list/2, 
+         lookup_id/1, lookup_name/1, 
+         update/1, delete/1]).
 
 -define(KEY_PHRASE_1, "message_box3").
 -define(KEY_PHRASE_2, "SHIMANE").
@@ -57,6 +59,19 @@ q(Sql, Params) ->
 all() ->
     {ok, TeamList} = q("select * from teams order by id desc"),
     TeamList.
+
+%%--------------------------------------------------------------------
+%% @doc get team list of given status.
+%% @end
+%%--------------------------------------------------------------------
+-spec statuses_list(Lebel, Count) -> [TeamList] when
+      Lebel :: integer(),
+      Count :: integer(),
+      TeamList :: [] | [#team{}].
+statuses_list(Level, Count) ->
+    {ok, TeamList} = q("select * from teams where status = $1
+                          order by id desc limit $2", [Level, Count]),
+    TeamList.    
 
 %%--------------------------------------------------------------------
 %% @doc get team list from id list.
@@ -113,9 +128,9 @@ insert(Name, OwnerId, IconUrl, Description) ->
 %% @doc lookup user by id.
 %% @end
 %%--------------------------------------------------------------------
--spec lookup_id(TeamId) -> {ok, Usr} | {error, not_found} |{error, Reason} when
+-spec lookup_id(TeamId) -> {ok, Team} | {error, not_found} |{error, Reason} when
       TeamId :: integer() | list() | binary(),
-      Usr :: #team{},
+      Team :: #team{},
       Reason :: tuple().
 lookup_id(TeamId) when is_binary(TeamId) -> lookup_id(binary_to_list(TeamId));
 lookup_id(TeamId) when is_list(TeamId) -> lookup_id(list_to_integer(TeamId));
@@ -152,11 +167,14 @@ lookup_name(Name) when is_binary(Name) or is_list(Name) ->
 update(Team) ->
     Result = q("update teams set name = $2,
                              icon_url = $3,
-                             description = $4
+                             description = $4,
+                             status_description = $5,
+                             status = $6
                   where id = $1
                   returning *",
               [Team#team.id, Team#team.name, Team#team.icon_url, 
-               Team#team.description]),
+               Team#team.description, Team#team.status_description,
+               Team#team.status]),
 
     case Result of
         {ok, [Record]} -> {ok, Record};
@@ -209,6 +227,9 @@ parse_record([Column | CTail], [Value | VTail], Result) ->
                   <<"name">> -> Result#team{name = Value};
                   <<"owner_id">> -> Result#team{owner_id = Value};
                   <<"icon_url">> -> Result#team{icon_url = Value};
+                  <<"status">> -> Result#team{status = Value};
+                  <<"status_description">> -> 
+                      Result#team{status_description = Value};
                   <<"description">> -> Result#team{description = Value};
                   <<"created_at">> -> Result#team{created_at = Value}
               end,

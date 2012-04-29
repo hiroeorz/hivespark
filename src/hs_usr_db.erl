@@ -105,9 +105,9 @@ insert(Name, LongName, Mail, Password, IconUrl, Description) ->
                 Description, CreatedAt]),
 
     case Result of
-        {ok, [Record]} -> {ok, Record};
         {ok, []} -> {error, empty_result};
-        {error, Reason} -> {error, Reason}
+        {error, Reason} -> {error, Reason};
+        {ok, [Record]} -> {ok, Record}
     end.
 
 %%--------------------------------------------------------------------

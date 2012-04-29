@@ -125,8 +125,9 @@ lookup_name(Name) ->
 authenticate(UsernameBin, PasswordBin) ->
     hs_usr_db:authenticate(UsernameBin, PasswordBin).
 
--spec get_teams(UsrId) -> [#team{}] when
-      UsrId :: integer() | binary().
+-spec get_teams(UsrId) -> {ok, [#team{}]} | {error, Reason} when
+      UsrId :: integer() | binary(),
+      Reason :: atom().
 get_teams(UsrId) ->
     TeamIds = case hs_usr_cache:get_team_id_list(UsrId) of
                 [] -> 
@@ -189,8 +190,12 @@ to_tuple(UsrId) when is_integer(UsrId) ->
     end;
 
 to_tuple(Usr) ->
+    {ok, Teams} = get_teams(Usr#usr.id),
+    
     {[{id, Usr#usr.id}, {name, Usr#usr.name}, {longname, Usr#usr.longname},
-      {icon_url, Usr#usr.icon_url}, {lat, Usr#usr.lat}, {lng, Usr#usr.lng},
+      {email, Usr#usr.email}, {icon_url, Usr#usr.icon_url}, 
+      {lat, Usr#usr.lat}, {lng, Usr#usr.lng},
+      {team_id_count, length(Teams)},
       {description, Usr#usr.description}]}.
 
 %%--------------------------------------------------------------------
