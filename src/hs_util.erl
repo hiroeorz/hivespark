@@ -125,28 +125,13 @@ acc_multipart(Req, [{Headers, BodyAcc}|Acc], end_of_part) ->
 acc_multipart(Req, Acc, eof) ->
     {lists:reverse(Acc), Req}.
 
-create_datetime_string(DateTime) when is_tuple(DateTime) ->
-    {{Y, M, D}, {H, Min, S}} = 
-        case DateTime of
-            {{Y1, M1, D1}, {H1, Min1, S1}} -> {{Y1, M1, D1}, {H1, Min1, S1}}; 
-            {{Y1, M1, D1}, {H1, Min1, S1, _}} -> {{Y1, M1, D1}, {H1, Min1, S1}}
-        end,
-    
-    Y2 = integer_to_list(Y),
-    M2 = string:right(integer_to_list(M), 2, $0),
-    D2 = string:right(integer_to_list(D), 2, $0),
-    H2 = string:right(integer_to_list(H), 2, $0),
-    Min2 = string:right(integer_to_list(Min), 2, $0),
-    S2 = case S of
-             S3 when is_float(S3) ->
-                 string:right(integer_to_list(trunc(S3)), 2, $0);
-             S3 when is_integer(S3) ->
-                 string:right(integer_to_list(S), 2, $0)
-         end,
-
+-spec create_datetime_string(calendar:datetime() | tuple()) -> binary().
+create_datetime_string({Date, {Hour, Minute, Second, _}}) ->
+    create_datetime_string({Date, {Hour, Minute, Second}});
+create_datetime_string({{Year, Month, Day}, {Hour, Minute, Second}}) ->
     list_to_binary(
-      lists:flatten(
-        io_lib:format("~s-~s-~s ~s:~s:~s", [Y2, M2, D2, H2, Min2, S2]))).
+        io_lib:format("~B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B",
+                      [Year, Month, Day, Hour, Minute, Second])).
 
 %%%===================================================================
 %%% Internal functions
