@@ -9,6 +9,8 @@
                  ]},
   {mod, { hivespark_app, []}},
   {env, [
-    {base_url, "http://localhost:8080"}
+    {listener_count, 100},
+    {port, 8080},
+    {base_url, "http://localhost"}
   ]}
  ]}.

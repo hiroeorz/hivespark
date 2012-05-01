@@ -69,7 +69,7 @@ not_authenticated(Header, Body, State) ->
     {401, Header, Body, State}.
 
 forbidden(State) ->
-    not_found("forbidden", State).
+    forbidden("forbidden", State).
 
 forbidden(Body, State) ->
     {403, [], Body, State}.
@@ -129,9 +129,13 @@ acc_multipart(Req, Acc, eof) ->
 create_datetime_string({Date, {Hour, Minute, Second, _}}) ->
     create_datetime_string({Date, {Hour, Minute, Second}});
 create_datetime_string({{Year, Month, Day}, {Hour, Minute, Second}}) ->
+    Second1 = if is_float(Second) -> round(Second);
+                 true -> Second
+              end,
+
     list_to_binary(
         io_lib:format("~B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B",
-                      [Year, Month, Day, Hour, Minute, Second])).
+                      [Year, Month, Day, Hour, Minute, Second1])).
 
 %%%===================================================================
 %%% Internal functions

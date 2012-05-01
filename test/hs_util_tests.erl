@@ -11,5 +11,8 @@ create_datetime_string_test_() ->
                           create_datetime_string({{2000,1,1},{0,0,0}}))},
         {"default with milli-sec ?",
             ?_assertEqual(<<"2000-01-01 00:00:00">>,
-                          create_datetime_string({{2000,1,1},{0,0,0,0}}))}
+                          create_datetime_string({{2000,1,1},{0,0,0,0}}))},
+        {"default with float-sec ?",
+            ?_assertEqual(<<"2000-01-01 00:00:00">>,
+                          create_datetime_string({{2000,1,1},{0, 0, 0.0}}))}
     ].
