@@ -268,9 +268,7 @@ save_image(_, Req, State, _SessionKey) ->
                      Path = lists:flatten([?ICON_DIR, FName, Ext]),
                      ok = file:write_file(Path, Data),
 
-                     {ok, BaseUrl} = application:get_env(?APP, base_url),
-                     IconUrlStr = lists:flatten([BaseUrl, "/team/image?fname=", 
-                                                 FName, Ext]),
+                     IconUrlStr = lists:flatten(["/team/image?fname=", FName, Ext]),
                      IconUrl = list_to_binary(IconUrlStr),
                      {ok, _} = hs_team:update(Team#team{icon_url = IconUrl}),
                      ok

@@ -119,9 +119,7 @@ save_image(_ParamList, Req, State, SessionKey) ->
                      Path = lists:flatten([?ICON_DIR, FName, Ext]),
                      ok = file:write_file(Path, Data),
 
-                     {ok, BaseUrl} = application:get_env(?APP, base_url),
-                     IconUrlStr = lists:flatten([BaseUrl, "/usr/image?fname=", 
-                                                 FName, Ext]),
+                     IconUrlStr = lists:flatten(["/usr/image?fname=", FName, Ext]),
                      IconUrl = list_to_binary(IconUrlStr),
                      {ok, _} = hs_usr:update(Usr#usr{icon_url = IconUrl}),
                      ok
