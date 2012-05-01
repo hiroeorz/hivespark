@@ -19,7 +19,7 @@
          show_checkin/4, send_message/4, get_messages/4, 
          save_image/4, image/4]).
 
--define(ICON_DIR, "/Users/shin/var/hivespark_images/").
+-define(ICON_DIR, "/usr/local/var/hivespark/images/").
 
 %%%===================================================================
 %%% API

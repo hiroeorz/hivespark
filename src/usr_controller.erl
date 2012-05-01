@@ -16,7 +16,7 @@
 -export([logout/4, show_myself/4, show/4, image/4, save_image/4,
          edit/4, update/4]).
 
--define(ICON_DIR, "/Users/shin/var/hivespark_images/").
+-define(ICON_DIR, "/usr/local/var/hivespark/images/").
 
 %%%===================================================================
 %%% API
