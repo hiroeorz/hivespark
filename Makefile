@@ -1,3 +1,5 @@
+.PHONY: test
+
 ERL=erl
 BEAMDIR=./deps/*/ebin ./ebin
 REBAR=./rebar
@@ -16,14 +18,12 @@ compile:
 xref:
 	@$(REBAR) xref skip_deps=true
 
-clean: 
+clean:
 	@ $(REBAR) clean
 
-check:
-	@rm -rf .eunit
-	@mkdir -p .eunit
+test:
 	@ export ERL_MAX_ETS_TABLES=$MAX_ETS_COUNT
-	@$(REBAR) skip_deps=true eunit 
+	@$(REBAR) skip_deps=true eunit
 
 edoc:
 	@$(REBAR) skip_deps=true doc
