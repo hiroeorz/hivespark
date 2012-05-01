@@ -142,8 +142,14 @@ parse_record([Column | CTail], [Value | VTail], Result) ->
                   <<"usr_id">> -> Result#message{usr_id = Value};
                   <<"team_id">> -> Result#message{team_id = Value};
                   <<"text">> -> Result#message{text = Value};
-                  <<"created_at">> -> Result#message{created_at = Value};
                   <<"lat">> -> Result#message{lat = Value};
-                  <<"lng">> -> Result#message{lng = Value}
+                  <<"lng">> -> Result#message{lng = Value};
+                  <<"created_at">> -> 
+                      case Value of
+                          undefined -> undefined;
+                          V -> 
+                              Result#message{created_at = hs_util:pgdaatetime_to_datetime(V)}
+                                  
+                      end
               end,
     parse_record(CTail, VTail, Result1).

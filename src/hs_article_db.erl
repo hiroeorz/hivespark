@@ -151,8 +151,9 @@ list_of_usr(UsrId, Count) when is_integer(UsrId) and
 to_tuple(Article) ->
     {ok, Usr} = hs_usr:lookup_id(Article#article.usr_id),
     {ok, Team} = hs_team:lookup_id(Article#article.team_id),
+    ?debugVal(Article#article.created_at),
     DateTime = hs_util:create_datetime_string(Article#article.created_at),
-        
+
     {[{id, Article#article.id}, {usr, hs_usr:to_tuple(Usr)},
       {team, hs_team:to_tuple(Team)}, {title, Article#article.title},
       {text, Article#article.text}, {type, Article#article.type}, 
@@ -190,8 +191,13 @@ parse_record([Column | CTail], [Value | VTail], Result) ->
                   <<"type">> -> Result#article{type = Value};
                   <<"status">> -> Result#article{status = Value};
                   <<"progress">> -> Result#article{progress = Value};
-                  <<"created_at">> -> Result#article{created_at = Value};
                   <<"lat">> -> Result#article{lat = Value};
-                  <<"lng">> -> Result#article{lng = Value}
+                  <<"lng">> -> Result#article{lng = Value};
+                  <<"created_at">> -> 
+                      case Value of
+                          undefined -> undefined;
+                          V -> 
+                              Result#article{created_at = hs_util:pgdaatetime_to_datetime(V)}
+                      end 
               end,
     parse_record(CTail, VTail, Result1).

@@ -1,6 +1,7 @@
 -define(APP, hivespark).
 -define(DB_SRV, {global, dbsrv}).
 -define(DB, pool1).
+-define(PGSQL_DEFAULT_PARAMETERS, [{"integer_datetimes", "on"}]).
 
 -record(http_state, {session_key :: binary()}).
 

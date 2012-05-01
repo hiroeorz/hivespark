@@ -105,6 +105,12 @@ parse_record([Column | CTail], [Value | VTail], Result) ->
     Result1 = case Name of
                   <<"usr_id">> -> Result#usr_team{usr_id = Value};
                   <<"team_id">> -> Result#usr_team{team_id = Value};
-                  <<"created_at">> -> Result#usr_team{created_at = Value}
+                  <<"created_at">> -> 
+                      case Value of
+                          undefined -> undefined;
+                          V -> 
+                              Result#usr_team{created_at = hs_util:pgdaatetime_to_datetime(V)}
+                                  
+                      end
               end,
     parse_record(CTail, VTail, Result1).

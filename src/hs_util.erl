@@ -20,7 +20,7 @@
          redirect_to/2, redirect_to/3,
          priv_dir/0, ext_part/1, ext_type/1, 
          get_multi_data/1, get_param_data/2, acc_multipart/2,
-         create_datetime_string/1]).
+         create_datetime_string/1, pgdaatetime_to_datetime/1]).
 
 -define(MultiPartDataPattern, [{<<"Content-Disposition">>, <<"form-data; name=\"fileName\"; filename=", _N/binary>>}, {'Content-Type', Type}]).
 
@@ -129,13 +129,13 @@ acc_multipart(Req, Acc, eof) ->
 create_datetime_string({Date, {Hour, Minute, Second, _}}) ->
     create_datetime_string({Date, {Hour, Minute, Second}});
 create_datetime_string({{Year, Month, Day}, {Hour, Minute, Second}}) ->
-    Second1 = if is_float(Second) -> round(Second);
-                 true -> Second
-              end,
-
     list_to_binary(
         io_lib:format("~B-~2.10.0B-~2.10.0B ~2.10.0B:~2.10.0B:~2.10.0B",
-                      [Year, Month, Day, Hour, Minute, Second1])).
+                      [Year, Month, Day, Hour, Minute, Second])).
+
+pgdaatetime_to_datetime({{Year, Month, Day}, 
+                         {Hour, Minute, Second}}) when is_float(Second) ->
+    {{Year, Month, Day}, {Hour, Minute, round(Second)}}.
 
 %%%===================================================================
 %%% Internal functions

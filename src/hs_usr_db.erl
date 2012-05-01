@@ -337,8 +337,15 @@ parse_record([Column | CTail], [Value | VTail], Result) ->
                   <<"password_seed">> -> Result#usr{password_seed = Value};
                   <<"icon_url">> -> Result#usr{icon_url = Value};
                   <<"description">> -> Result#usr{description = Value};
-                  <<"created_at">> -> Result#usr{created_at = Value};
                   <<"lat">> -> Result#usr{lat = Value};
-                  <<"lng">> -> Result#usr{lng = Value}
+                  <<"lng">> -> Result#usr{lng = Value};
+                  <<"created_at">> -> 
+                      case Value of
+                          undefined -> undefined;
+                          V -> 
+                              Result#usr{created_at = hs_util:pgdaatetime_to_datetime(V)}
+                                  
+                      end
               end,
+
     parse_record(CTail, VTail, Result1).
