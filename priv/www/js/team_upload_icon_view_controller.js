@@ -23,6 +23,13 @@ HS.TeamUploadIconViewController.prototype = (function () {
 		  });
     };
 
+    var get_usr_info = function () {
+	$.getJSON("/usr/show_myself",
+		  function (json) {
+		      $("div#profile img").attr("src", json.usr.icon_url);
+		  });
+    };
+
     /* public */
     return {
 	/**
@@ -38,7 +45,7 @@ HS.TeamUploadIconViewController.prototype = (function () {
 	 *
 	 * @method viewDidLoad
 	 */
-	viewDidLoad: function () {
+	view_did_load: function () {
 	    var self = this;
 	    var params = new HS.Util().qs_vals();
 	    
@@ -46,6 +53,7 @@ HS.TeamUploadIconViewController.prototype = (function () {
 	    $("a#team-show").attr("href", 
 				  "/team/show?team_id=" + params.team_id);
 	    get_team_info(params.team_id);
+	    get_usr_info();
 	}
 
     };

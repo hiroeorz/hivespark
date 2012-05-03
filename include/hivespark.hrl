@@ -59,6 +59,7 @@
 -define(AUTHENTICATED_ROUTE, 
         C == <<"usr">>, A == <<"show">>;
         C == <<"usr">>, A == <<"edit">>;
+        C == <<"usr">>, A == <<"upload_icon">>;
         C == <<"usr">>, A == <<"show_myself">>;
         C == <<"usr">>, A == <<"update">>;
         C == <<"usr">>, A == <<"image">>;

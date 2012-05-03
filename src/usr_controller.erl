@@ -13,7 +13,7 @@
 -include("hivespark.hrl").
 
 %% API
--export([logout/4, show_myself/4, show/4, image/4, save_image/4,
+-export([logout/4, show_myself/4, show/4, image/4, save_image/4, upload_icon/4,
          edit/4, update/4]).
 
 -define(ICON_DIR, "/usr/local/var/hivespark/images/").
@@ -24,6 +24,9 @@
 
 edit(_ParamList, _Req, State, _SessionKey) ->
     hs_util:view("usr_edit.html", State).
+
+upload_icon(_ParamList, _Req, State, _SessionKey) ->
+    hs_util:view("usr_upload_icon.html", State).
 
 logout(ParamList, _Req, State, SessionKey) ->
     Format = proplists:get_value(<<"format">>, ParamList),
@@ -101,9 +104,11 @@ image(ParamList, _Req, State, _SessionKey) ->
         {error, enoent} -> hs_util:not_found("image not found", State)
     end.
 
-save_image(_ParamList, Req, State, SessionKey) ->
-    Usr = hs_session:get_usr(SessionKey),
+save_image(_, Req, State, SessionKey) ->
     {Results, _} = hs_util:acc_multipart(Req, []),
+    ParamList = hs_util:get_param_data(Results),
+    Format = proplists:get_value(<<"format">>, ParamList),
+    Usr = hs_session:get_usr(SessionKey),
     
     Result = case hs_util:get_multi_data(Results) of
                  {error, not_found} -> error;
@@ -120,11 +125,16 @@ save_image(_ParamList, Req, State, SessionKey) ->
              end,
 
     Reply = case Result of
-                ok -> {[{result, <<"success">>}]};
-                _ -> {[{result, <<"failure">>}]}
+                ok -> {[{result, true}]};
+                _ -> {[{result, false}]}
             end,
 
-    hs_util:ok(jiffy:encode(Reply), State).
+    case Format of
+        <<"html">> ->
+            hs_util:view("usr_upload_icon.html", State);
+        _ ->
+            hs_util:ok(jiffy:encode(Reply), State)
+    end.
 
 %%%===================================================================
 %%% Internal functions

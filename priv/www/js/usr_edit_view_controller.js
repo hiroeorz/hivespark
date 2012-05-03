@@ -22,6 +22,7 @@ HS.UsrEditViewController.prototype = (function () {
     var get_user_info = function () {
 	$.getJSON("/usr/show_myself",
 		  function (json) {
+		      $("div#profile img").attr("src", json.usr.icon_url);
 		      $("#name").val(json.usr.name);
 		      $("#longname").val(json.usr.longname);
 		      $("#email").val(json.usr.email);
@@ -52,7 +53,7 @@ HS.UsrEditViewController.prototype = (function () {
 	 *
 	 * @method viewDidLoad
 	 */
-	viewDidLoad: function () {
+	view_did_load: function () {
 	    var self = this;
 	    var params = new HS.Util().qs_vals();
 	    set_default_event_lister(params);
