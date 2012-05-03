@@ -471,8 +471,8 @@ get_key_of_timeline(TeamId) ->
 
 -spec add_message_id(TeamId, MsgId) -> ok when
       TeamId :: integer(),
-      MsgId :: binary().
-add_message_id(TeamId, MsgId) when is_integer(TeamId), is_binary(MsgId) ->
+      MsgId :: integer().
+add_message_id(TeamId, MsgId) when is_integer(TeamId), is_integer(MsgId) ->
     Key = get_key_of_timeline(TeamId),
     {ok, _} = eredis_pool:q(?DB_SRV, ["LPUSH", Key, MsgId]),
     ok.

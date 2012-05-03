@@ -37,7 +37,7 @@ create table usrs_teams (
 create index usrs_teams_index on usrs_teams (usr_id, team_id, created_at);
 
 create table messages (
-       id varchar(40) not null,
+       id bigserial not null,
        usr_id integer not null,
        team_id integer not null,
        text varchar(420),

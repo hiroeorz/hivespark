@@ -255,7 +255,7 @@ image(ParamList, _Req, State, _SessionKey) ->
 
 save_image(_, Req, State, _SessionKey) ->
     {Results, _} = hs_util:acc_multipart(Req, []),
-    ParamList = hs_util:get_param_data(Results, []),
+    ParamList = hs_util:get_param_data(Results),
     TeamId = proplists:get_value(<<"team_id">>, ParamList),
     Format = proplists:get_value(<<"format">>, ParamList),
     {ok, Team} = hs_team:lookup_id(TeamId),

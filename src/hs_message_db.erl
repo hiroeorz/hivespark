@@ -49,11 +49,10 @@ q(Sql, Params) ->
       Message :: #message{},
       Reason :: atom().
 insert(Message) ->
-    Result =  q("insert into messages (id, usr_id, team_id, text, created_at, 
+    Result =  q("insert into messages (usr_id, team_id, text, created_at, 
                                        lat, lng)
-                   values ($1, $2, $3, $4, $5, $6, $7) returning *",
-                [Message#message.id, 
-                 Message#message.usr_id, 
+                   values ($1, $2, $3, $4, $5, $6) returning *",
+                [Message#message.usr_id, 
                  Message#message.team_id, 
                  Message#message.text, 
                  {date(), time()},
@@ -70,7 +69,7 @@ insert(Message) ->
       Id :: integer() | binary(),
       Message :: #message{},
       Reason :: atom().
-get_msg(MsgId) when is_integer(MsgId) ->
+get_msg(MsgId) when is_binary(MsgId) ->
     get_msg(list_to_integer(binary_to_list(MsgId)));
 
 get_msg(MsgId) when is_integer(MsgId) ->
@@ -148,8 +147,8 @@ parse_record([Column | CTail], [Value | VTail], Result) ->
                       case Value of
                           undefined -> undefined;
                           V -> 
-                              Result#message{created_at = hs_util:pgdaatetime_to_datetime(V)}
-                                  
+                              Result#message{
+                                created_at = hs_util:pgdaatetime_to_seconds(V)}
                       end
               end,
     parse_record(CTail, VTail, Result1).

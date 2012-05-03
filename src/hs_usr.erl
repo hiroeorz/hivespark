@@ -211,11 +211,7 @@ add_message(UsrId, MsgId) when is_integer(UsrId), is_binary(MsgId) ->
     ok.
 
 %%--------------------------------------------------------------------
-%% @doc add message to users timeline.
-%% @end
-%%--------------------------------------------------------------------
-%%--------------------------------------------------------------------
-%% @doc add message to users timeline.
+%% @doc get messages for users timeline.
 %% @end
 %%--------------------------------------------------------------------
 -spec get_messages(UsrId, Count) -> 

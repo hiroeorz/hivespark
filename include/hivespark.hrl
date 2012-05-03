@@ -15,7 +15,7 @@
               lat = ""         ::string(),
               lng = ""         ::string(),
               description = "" ::string(),
-              created_at       ::tuple()}).
+              created_at       ::non_neg_integer()}).
 
 -record(team, {id                       ::integer(),
                name                     ::string(),
@@ -24,17 +24,17 @@
                description = ""         ::string(),
                status = 0               ::integer(),
                status_description = ""  ::string(),
-               created_at               ::tuple()}).
+               created_at               ::non_neg_integer()}).
 
 -record(usr_team, {usr_id       ::integer(),
                    team_id      ::integer(),
-                   created_at   ::tuple()}).
+                   created_at   ::non_neg_integer()}).
 
--record(message, {id            ::binary(),
+-record(message, {id            ::integer(),
                   usr_id        ::integer(),
                   team_id       ::integer(),
                   text          ::binary(),
-                  created_at    ::tuple(),
+                  created_at    ::non_neg_integer(),
                   lat           ::string(),
                   lng           ::string()}).
 
@@ -44,7 +44,7 @@
                   title         ::binary(),
                   text          ::binary(),
                   type          ::integer(),
-                  created_at    ::tuple(),
+                  created_at    ::non_neg_integer(),
                   status        ::integer(),
                   progress      ::integer(),
                   lat           ::string(),

@@ -1,5 +1,8 @@
 {application,hivespark}.
 {packages,[]}.
-{modules,[contents_server,hivespark,hivespark_app,hivespark_http_handler,
-          hivespark_sup,hivespark_usr,hivespark_usr_db,
-          hivespark_websocket_handler,json]}.
+{modules,[article_controller,auth_controller,hivespark,hivespark_app,
+          hivespark_sup,hs_article_db,hs_http_handler,hs_message,
+          hs_message_cache,hs_message_db,hs_session,hs_team,hs_team_db,
+          hs_team_sup,hs_usr,hs_usr_cache,hs_usr_db,hs_usr_team_db,hs_util,
+          hs_websocket_handler,message_controller,team_controller,
+          team_public_controller,usr_controller,usr_public_controller]}.

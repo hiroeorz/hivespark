@@ -13,7 +13,7 @@
 -include("hivespark.hrl").
 
 %% API
--export([save/1, get_msg/1, get_next_id/1, mget_msg/1, to_tuple/1]).
+-export([save/1, get_msg/1, mget_msg/1, to_tuple/1]).
 
 -define(MSG_KEY_HEADER, "_hmk_").
 -define(USR_MSG_ID, <<"usr_msg_id">>).
@@ -33,11 +33,10 @@
       Message :: #message{},
       NewMessage :: #message{},
       Reason :: atom().
-save(Message=#message{usr_id=UsrId, team_id=_TeamId, text=Text}) when 
+save(Message=#message{usr_id=_UsrId, team_id=_TeamId, text=Text}) when 
       is_binary(Text) ->
     
-    NewMessage = Message#message{id = get_next_id(UsrId),
-                                 created_at={date(), time()}},
+    NewMessage = Message#message{created_at={date(), time()}},
 
     case hs_message_db:insert(NewMessage) of
         {error, Reason} -> {error, Reason};
@@ -80,11 +79,31 @@ mget_msg(MsgIdList) when is_list(MsgIdList) ->
                              end, 
                              MsgBinList),
             NewList = lists:delete(undefined, List),
-            repaire_msg_list_from_db(MsgIdList, NewList, [])
+            repaire_msg_list_from_db(MsgIdList, NewList)
     end.
+
+%%--------------------------------------------------------------------
+%% @doc Redis上のキャッシュに抜けがあった場合にDBから取得した値を新たにキャッシュする。
+%% @end
+%%--------------------------------------------------------------------
+-spec repaire_msg_list_from_db(MsgIdList, MsgList) -> NewMsgList when
+      MsgIdList :: [binary()],
+      MsgList :: [#message{} | undefined],
+      NewMsgList :: [#message{}].
+repaire_msg_list_from_db(MsgIdList, MsgList) ->
+    repaire_msg_list_from_db(MsgIdList, MsgList, []).
 
 repaire_msg_list_from_db([], _, Results) ->
     lists:reverse(Results);
+
+repaire_msg_list_from_db([MsgId | IdTail], [], Results) ->
+    case hs_message_db:get_msg(MsgId) of
+                {ok, NewMsg} ->
+                    spawn(fun() -> hs_message_cache:save(NewMsg) end),
+                    repaire_msg_list_from_db(IdTail, [], [NewMsg | Results]);
+                {error, _} ->
+                    repaire_msg_list_from_db(IdTail, [], Results)
+    end;
 
 repaire_msg_list_from_db([MsgId | IdTail], [Msg | MsgTail], Results) ->
     case Msg of
@@ -124,21 +143,4 @@ get_key(MsgId) when is_binary(MsgId) ->
   
 get_key(MsgId) ->
     list_to_binary(lists:flatten([?MSG_KEY_HEADER, MsgId])).
-
--spec get_next_id(UsrId) -> MessageId when
-      UsrId :: integer() | binary() | string(),
-      MessageId :: binary().
-get_next_id(UsrId) when is_integer(UsrId)->
-    get_next_id(integer_to_list(UsrId));
-
-get_next_id(UsrId) when is_binary(UsrId)->
-    get_next_id(binary_to_list(UsrId));
-
-get_next_id(UsrId) when is_list(UsrId) ->
-    {ok, BinVal} = 
-        eredis_pool:q(?DB_SRV, ["HINCRBY", ?USR_MSG_ID, UsrId, 1]),
-
-    UsrPart = string:right(UsrId, ?MSGID_USR_PART_LENGTH, $0),
-    MsgPart = string:right(binary_to_list(BinVal), ?MSGID_MSG_PART_LENGTH, $0),
-    list_to_binary(lists:flatten([UsrPart, MsgPart])).
 

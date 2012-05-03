@@ -342,9 +342,9 @@ parse_record([Column | CTail], [Value | VTail], Result) ->
                   <<"created_at">> -> 
                       case Value of
                           undefined -> undefined;
-                          V -> 
-                              Result#usr{created_at = hs_util:pgdaatetime_to_datetime(V)}
-                                  
+                          V ->
+                              Result#usr{
+                                created_at = hs_util:pgdaatetime_to_seconds(V)}
                       end
               end,
 
