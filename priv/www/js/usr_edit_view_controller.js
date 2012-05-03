@@ -51,7 +51,7 @@ HS.UsrEditViewController.prototype = (function () {
 	/**
 	 * 画面表示直後に呼ばれる
 	 *
-	 * @method viewDidLoad
+	 * @method view_did_load
 	 */
 	view_did_load: function () {
 	    var self = this;

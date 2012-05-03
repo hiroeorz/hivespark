@@ -59,7 +59,7 @@ handle(Req, State) ->
         [Controller] ->
             handle(Controller, <<"index">>, ParamList, Req, State);
         [] ->
-            handle(<<"top">>, <<"index">>, [], Req, State)
+            handle(<<"team">>, <<"index">>, [], Req, State)
     end.
 
 %%%==================================================================
