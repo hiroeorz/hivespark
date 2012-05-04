@@ -1,46 +1,110 @@
 %%%-------------------------------------------------------------------
-%%% @author Hiroe Shin <shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net>
+%%% @author Hiroe Shin <hiroe.orz@gmail.com>
 %%% @copyright (C) 2012, Hiroe Shin
 %%% @doc
 %%%
 %%% @end
-%%% Created : 22 Feb 2012 by Hiroe Shin <shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net>
+%%% Created : 16 Feb 2012 by Hiroe Shin <hiroe.orz@gmail.com>
 %%%-------------------------------------------------------------------
--module(team_controller).
+-module(team_handler).
+-behaviour(cowboy_http_handler).
 
 %% Include
 -include_lib("eunit/include/eunit.hrl").
 -include("hivespark.hrl").
 
 %% API
--export([index/4, new/4, show/4, edit/4, upload_icon/4, delete/4,
-         info/4, create/4, update/4, all/4, list/4, statuses_list/4,
-         checkin/4, add_usr/4, delete_usr/4,
-         show_checkin/4, send_message/4, get_messages/4, 
-         save_image/4, image/4]).
+-export([init/3, handle/2, terminate/2]).
+
+-record(state, {require_login = false :: boolean()}).
 
 -define(ICON_DIR, "/usr/local/var/hivespark/images/").
 
 %%%===================================================================
-%%% API
+%% @doc HTTP CallBacks
 %%%===================================================================
 
-index(_ParamList, _Req, State, _SessionKey) ->
+init({tcp, http}, Req, Options) ->
+    case lists:member(require_login, Options) of
+        true ->
+            {ok, Req, #state{require_login = true}};
+        false ->
+            {ok, Req, #state{require_login = false}}
+    end.
+
+terminate(_Req, _State) ->
+    ok.
+
+%%%===================================================================
+%%% @doc HTTP Handler
+%%%===================================================================
+handle(Req, #state{require_login = true} = State) ->
+    {PathList, _} = cowboy_http_req:path(Req),
+    ParamList = hs_util:get_request_params(Req),
+    SessionKey = hs_session:get_session_key_with_req(Req),
+
+    [<<"team">>, Action] = PathList,
+    Args = [ParamList, Req, State, SessionKey],
+
+    {Req2, NewState} = 
+        case hs_session:check_loggedin_with_req(Req) of
+            true ->
+                {StatusCode, H, Bin, NS} = 
+                    case Action of
+                        <<"index">>          -> index(Args);
+                        <<"new">>            -> new(Args);
+                        <<"show">>           -> show(Args);
+                        <<"edit">>           -> edit(Args);
+                        <<"upload_icon">>    -> upload_icon(Args);
+                        <<"info">>           -> info(Args);
+                        <<"create">>         -> create(Args);
+                        <<"update">>         -> update(Args);
+                        <<"all">>            -> all(Args);
+                        <<"list">>           -> list(Args);
+                        <<"statuses_list">>  -> statuses_list(Args);
+                        <<"delete">>         -> delete(Args);
+                        <<"add_usr">>        -> add_usr(Args);
+                        <<"delete_usr">>     -> delete_usr(Args);
+                        <<"checkin">>        -> checkin(Args);
+                        <<"show_checkin">>   -> show_checkin(Args);
+                        <<"send_message">>   -> send_message(Args);
+                        <<"get_messages">>   -> get_messages(Args);
+                        <<"image">>          -> image(Args);
+                        <<"save_image">>     -> save_image(Args)
+                    end,
+                
+                {hs_util:reply(StatusCode, H, Bin, Req), NS};
+            false ->
+                {StatusCode, H, B, NS} = hs_util:redirect_to("/auth/index", 
+                                                             [], State),
+                {hs_util:reply(StatusCode, H, B, Req), NS}
+        end,
+
+    {ok, Req2, NewState};
+
+handle(Req, #state{require_login = false} = State) ->
+    {ok, Req, State}.
+    
+%%%===================================================================
+%%% Request Handle Functions
+%%%===================================================================
+
+index([_ParamList, _Req, State, _SessionKey]) ->
     hs_util:view("team_index.html", State).
 
-new(_ParamList, _Req, State, _SessionKey) ->
+new([_ParamList, _Req, State, _SessionKey]) ->
     hs_util:view("team_new.html", State).
 
-show(_ParamList, _Req, State, _SessionKey) ->
+show([_ParamList, _Req, State, _SessionKey]) ->
     hs_util:view("team_show.html", State).
 
-edit(_ParamList, _Req, State, _SessionKey) ->
+edit([_ParamList, _Req, State, _SessionKey]) ->
     hs_util:view("team_edit.html", State).
 
-upload_icon(_ParamList, _Req, State, _SessionKey) ->
+upload_icon([_ParamList, _Req, State, _SessionKey]) ->
     hs_util:view("team_upload_icon.html", State).
 
-info(ParamList, _Req, State, SessionKey) ->
+info([ParamList, _Req, State, SessionKey]) ->
     Usr = hs_session:get_usr(SessionKey),
     TeamId = proplists:get_value(<<"team_id">>, ParamList),
     case hs_team:lookup_id(TeamId) of
@@ -55,7 +119,7 @@ info(ParamList, _Req, State, SessionKey) ->
             hs_util:not_found(jiffy:encode([{error, not_found}]))
     end.
 
-create(ParamList, _Req, State, SessionKey) ->
+create([ParamList, _Req, State, SessionKey]) ->
     Usr = hs_session:get_usr(SessionKey),
     Name = proplists:get_value(<<"name">>, ParamList),
     IconUrl = proplists:get_value(<<"icon_url">>, ParamList),
@@ -78,7 +142,7 @@ create(ParamList, _Req, State, SessionKey) ->
             hs_util:ok(jiffy:encode({Reply}), State)
     end.
             
-update(ParamList, _Req, State, SessionKey) ->
+update([ParamList, _Req, State, SessionKey]) ->
     Usr = hs_session:get_usr(SessionKey),
     TeamId = proplists:get_value(<<"team_id">>, ParamList),
     TeamIdStr = binary_to_list(TeamId),                    
@@ -133,20 +197,20 @@ update(ParamList, _Req, State, SessionKey) ->
             end
     end.
 
-all(_ParamList, _Req, State, _SessionKey) ->
+all([_ParamList, _Req, State, _SessionKey]) ->
     Teams = lists:map(fun(Team) -> hs_team:to_tuple(Team) end, 
                       hs_team_db:all()),
     Reply = {[{<<"teams">>, Teams}]},
     hs_util:ok(jiffy:encode(Reply), State).    
 
-list(_ParamList, _Req, State, SessionKey) ->
+list([_ParamList, _Req, State, SessionKey]) ->
     Usr = hs_session:get_usr(SessionKey),
     Teams = lists:map(fun(Team) -> hs_team:to_tuple(Team) end, 
                       hs_usr:get_teams(Usr#usr.id)),
     Reply = {[{<<"teams">>, Teams}]},
     hs_util:ok(jiffy:encode(Reply), State).    
 
-statuses_list(_ParamList, _Req, State, _SessionKey) ->
+statuses_list([_ParamList, _Req, State, _SessionKey]) ->
     StopTeams = lists:map(fun(T) -> hs_team:to_tuple(T) end,
                           hs_team:statuses_list(0, 6)),
     BurningTeams = lists:map(fun(T) -> hs_team:to_tuple(T) end,
@@ -157,7 +221,7 @@ statuses_list(_ParamList, _Req, State, _SessionKey) ->
 
     hs_util:ok(jiffy:encode(Reply), State).
 
-delete(ParamList, _Req, State, SessionKey) ->
+delete([ParamList, _Req, State, SessionKey]) ->
     Usr = hs_session:get_usr(SessionKey),
     TeamIdBin = proplists:get_value(<<"team_id">>, ParamList),
     TeamId = list_to_integer(binary_to_list(TeamIdBin)),
@@ -174,7 +238,7 @@ delete(ParamList, _Req, State, SessionKey) ->
             end
     end.
 
-add_usr(ParamList, _Req, State, SessionKey) ->
+add_usr([ParamList, _Req, State, SessionKey]) ->
     Usr = hs_session:get_usr(SessionKey),
     TeamIdBin = proplists:get_value(<<"team_id">>, ParamList),
     TeamId = list_to_integer(binary_to_list(TeamIdBin)),
@@ -182,7 +246,7 @@ add_usr(ParamList, _Req, State, SessionKey) ->
     Reply = {[{<<"result">>, true}]},
     hs_util:ok(jiffy:encode(Reply), State).
 
-delete_usr(ParamList, _Req, State, SessionKey) ->
+delete_usr([ParamList, _Req, State, SessionKey]) ->
     Usr = hs_session:get_usr(SessionKey),
     TeamIdBin = proplists:get_value(<<"team_id">>, ParamList),
     TeamId = list_to_integer(binary_to_list(TeamIdBin)),
@@ -190,7 +254,7 @@ delete_usr(ParamList, _Req, State, SessionKey) ->
     Reply = {[{<<"result">>, true}]},
     hs_util:ok(jiffy:encode(Reply), State).
 
-checkin(ParamList, _Req, State, SessionKey) ->
+checkin([ParamList, _Req, State, SessionKey]) ->
     Usr = hs_session:get_usr(SessionKey),
     TeamId = proplists:get_value(<<"team_id">>, ParamList),
 
@@ -199,14 +263,14 @@ checkin(ParamList, _Req, State, SessionKey) ->
     Reply = {[{<<"team_id">>, TeamId}, {<<"members">>, Members}]},
     hs_util:ok(jiffy:encode(Reply), State).    
 
-show_checkin(_ParamList, _Req, State, SessionKey) ->
+show_checkin([_ParamList, _Req, State, SessionKey]) ->
     {ok, TeamId} = hs_session:get_value(SessionKey, "checkin_team_id"),
     {ok, Team} = hs_team:lookup_id(TeamId),
 
     Reply = {[{<<"team">>, hs_team:to_tuple(Team)}]},
     hs_util:ok(jiffy:encode(Reply), State).        
 
-send_message(ParamList, _Req, State, SessionKey) ->
+send_message([ParamList, _Req, State, SessionKey]) ->
     TeamIdBin = proplists:get_value(<<"team_id">>, ParamList),
     TeamId = list_to_integer(binary_to_list(TeamIdBin)),
     TextBin = proplists:get_value(<<"text">>, ParamList),
@@ -224,7 +288,7 @@ send_message(ParamList, _Req, State, SessionKey) ->
             end,    
     hs_util:ok(jiffy:encode(Reply), State).    
 
-get_messages(ParamList, _Req, State, _SessionKey) ->
+get_messages([ParamList, _Req, State, _SessionKey]) ->
     TeamId = proplists:get_value(<<"team_id">>, ParamList),
     Count = case proplists:get_value(<<"count">>, ParamList) of
                 undefined -> 40;
@@ -244,7 +308,7 @@ get_messages(ParamList, _Req, State, _SessionKey) ->
             end,
     hs_util:ok(jiffy:encode(Reply), State).
 
-image(ParamList, _Req, State, _SessionKey) ->
+image([ParamList, _Req, State, _SessionKey]) ->
     FName = proplists:get_value(<<"fname">>, ParamList),
     Path = lists:flatten([?ICON_DIR, binary_to_list(FName)]),
 
@@ -253,7 +317,7 @@ image(ParamList, _Req, State, _SessionKey) ->
         {error, enoent} -> hs_util:not_found("image not found", State)
     end.
 
-save_image(_, Req, State, _SessionKey) ->
+save_image([_, Req, State, _SessionKey]) ->
     {Results, _} = hs_util:acc_multipart(Req, []),
     ParamList = hs_util:get_param_data(Results),
     TeamId = proplists:get_value(<<"team_id">>, ParamList),
@@ -288,8 +352,3 @@ save_image(_, Req, State, _SessionKey) ->
         _ -> 
             hs_util:ok(jiffy:encode({Reply}), State)
     end.
-
-%%%===================================================================
-%%% Internal functions
-%%%===================================================================
-

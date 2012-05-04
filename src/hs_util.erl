@@ -20,7 +20,8 @@
          redirect_to/2, redirect_to/3,
          priv_dir/0, ext_part/1, ext_type/1, 
          get_multi_data/1, get_param_data/1, acc_multipart/2,
-         create_datetime_string/1, pgdaatetime_to_seconds/1]).
+         create_datetime_string/1, pgdaatetime_to_seconds/1,
+         get_request_params/1, reply/4, reply/2]).
 
 -define(MultiPartDataPattern, [{<<"Content-Disposition">>, <<"form-data; name=\"fileName\"; filename=", _N/binary>>}, {'Content-Type', Type}]).
 
@@ -267,6 +268,41 @@ pgdaatetime_to_seconds({{Year, Month, Day}, {Hour, Min, Second}})
   when is_float(Second)->
     DateTime = {{Year, Month, Day}, {Hour, Min, round(Second)}},
     calendar:datetime_to_gregorian_seconds(DateTime).
+
+%%--------------------------------------------------------------------
+%% @doc
+%% リクエストパラメータを取り出してtupleのlistとして返します。
+%% @end
+%%--------------------------------------------------------------------
+-spec get_request_params(Req) -> ParamList when
+      Req :: any(),
+      ParamList :: [tuple()].
+get_request_params(Req) ->
+    {Method, _} = cowboy_http_req:method(Req),
+
+    case Method of
+        'GET' ->
+            {ParamList1, _} = cowboy_http_req:qs_vals(Req),
+            ParamList1;
+        'POST' ->
+            case cowboy_http_req:parse_header('Content-Type', Req) of
+                {{<<"multipart">>, <<"form-data">>, _}, _} -> [];
+                _Else ->
+                    case cowboy_http_req:body_qs(Req) of
+                        {ParamList2, _} -> ParamList2;
+                        _ -> []
+                    end
+            end
+    end.
+
+                        
+reply(Status, Headers, Body, Req) ->
+    {ok, Req2} = cowboy_http_req:reply(Status, Headers, Body, Req),
+    Req2.
+
+reply(Status, Req) ->
+    {ok, Req2} = cowboy_http_req:reply(Status, Req),
+    Req2.
 
 %%%===================================================================
 %%% Internal functions

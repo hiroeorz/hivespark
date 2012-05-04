@@ -1,34 +1,89 @@
 %%%-------------------------------------------------------------------
-%%% @author Hiroe Shin <shin@mac-hiroe-orz-17.local>
+%%% @author Hiroe Shin <hiroe.orz@gmail.com>
 %%% @copyright (C) 2012, Hiroe Shin
 %%% @doc
 %%%
 %%% @end
-%%% Created :  9 Mar 2012 by Hiroe Shin <shin@mac-hiroe-orz-17.local>
+%%% Created : 16 Feb 2012 by Hiroe Shin <hiroe.orz@gmail.com>
 %%%-------------------------------------------------------------------
--module(usr_controller).
+-module(usr_handler).
+-behaviour(cowboy_http_handler).
 
 %% Include
 -include_lib("eunit/include/eunit.hrl").
 -include("hivespark.hrl").
 
 %% API
--export([logout/4, show_myself/4, show/4, image/4, save_image/4, upload_icon/4,
-         edit/4, update/4]).
+-export([init/3, handle/2, terminate/2]).
+
+-record(state, {require_login = false :: boolean()}).
 
 -define(ICON_DIR, "/usr/local/var/hivespark/images/").
 
 %%%===================================================================
-%%% API
+%% @doc HTTP CallBacks
 %%%===================================================================
 
-edit(_ParamList, _Req, State, _SessionKey) ->
+init({tcp, http}, Req, Options) ->
+    case lists:member(require_login, Options) of
+        true ->
+            {ok, Req, #state{require_login = true}};
+        false ->
+            {ok, Req, #state{require_login = false}}
+    end.
+
+terminate(_Req, _State) ->
+    ok.
+
+%%%===================================================================
+%%% @doc HTTP Handler
+%%%===================================================================
+handle(Req, #state{require_login = true} = State) ->
+    {PathList, _} = cowboy_http_req:path(Req),
+    ParamList = hs_util:get_request_params(Req),
+    SessionKey = hs_session:get_session_key_with_req(Req),
+
+    [<<"usr">>, Action] = PathList,
+    Args = [ParamList, Req, State, SessionKey],
+
+    {Req2, NewState} = 
+        case hs_session:check_loggedin_with_req(Req) of
+            true ->
+                {StatusCode, H, Bin, NS} = 
+                    case Action of
+                        <<"edit">>        -> edit(Args);
+                        <<"upload_icon">> -> upload_icon(Args);
+                        <<"logout">>      -> logout(Args);
+                        <<"show_myself">> -> show_myself(Args);
+                        <<"show">>        -> show(Args);
+                        <<"update">>      -> update(Args);
+                        <<"image">>       -> image(Args);
+                        <<"save_image">>  -> save_image(Args)
+                    end,
+                
+                {hs_util:reply(StatusCode, H, Bin, Req), NS};
+            false ->
+                {StatusCode, H, B, NS} = hs_util:redirect_to("/auth/index", 
+                                                             [], State),
+                {hs_util:reply(StatusCode, H, B, Req), NS}
+        end,
+
+    {ok, Req2, NewState};
+
+handle(Req, #state{require_login = false} = State) ->
+    {ok, Req, State}.
+    
+%%%===================================================================
+%%% Request Handle Functions
+%%%===================================================================
+
+edit([_ParamList, _Req, State, _SessionKey]) ->
     hs_util:view("usr_edit.html", State).
 
-upload_icon(_ParamList, _Req, State, _SessionKey) ->
+upload_icon([_ParamList, _Req, State, _SessionKey]) ->
     hs_util:view("usr_upload_icon.html", State).
 
-logout(ParamList, _Req, State, SessionKey) ->
+logout([ParamList, _Req, State, SessionKey]) ->
     Format = proplists:get_value(<<"format">>, ParamList),
     ok = hs_session:abandon(SessionKey),
 
@@ -44,12 +99,12 @@ logout(ParamList, _Req, State, SessionKey) ->
             hs_util:ok([Cookie1, Cookie2], jiffy:encode({[{result, true}]}), State)
     end.
     
-show_myself(_ParamList, _Req, State, SessionKey) ->
+show_myself([_ParamList, _Req, State, SessionKey]) ->
     Usr = hs_session:get_usr(SessionKey),
     Reply = {[{usr, hs_usr:to_tuple(Usr)}]},
     hs_util:ok(jiffy:encode(Reply), State).
 
-show(ParamList, _Req, State, _SessionKey) ->
+show([ParamList, _Req, State, _SessionKey]) ->
     UsrId = proplists:get_value(<<"usr_id">>, ParamList),
     Name = proplists:get_value(<<"name">>, ParamList),
 
@@ -74,7 +129,7 @@ show(ParamList, _Req, State, _SessionKey) ->
             hs_util:not_found(jiffy:encode(ErrorReply), State)
     end.
 
-update(ParamList, _Req, State, SessionKey) ->
+update([ParamList, _Req, State, SessionKey]) ->
     Usr = hs_session:get_usr(SessionKey),
     Name = proplists:get_value(<<"name">>, ParamList),
     LongName = proplists:get_value(<<"longname">>, ParamList),
@@ -95,7 +150,7 @@ update(ParamList, _Req, State, SessionKey) ->
     end.
 
 
-image(ParamList, _Req, State, _SessionKey) ->
+image([ParamList, _Req, State, _SessionKey]) ->
     FName = proplists:get_value(<<"fname">>, ParamList),
     Path = lists:flatten([?ICON_DIR, binary_to_list(FName)]),
 
@@ -104,7 +159,7 @@ image(ParamList, _Req, State, _SessionKey) ->
         {error, enoent} -> hs_util:not_found("image not found", State)
     end.
 
-save_image(_, Req, State, SessionKey) ->
+save_image([_, Req, State, SessionKey]) ->
     {Results, _} = hs_util:acc_multipart(Req, []),
     ParamList = hs_util:get_param_data(Results),
     Format = proplists:get_value(<<"format">>, ParamList),
@@ -135,8 +190,4 @@ save_image(_, Req, State, SessionKey) ->
         _ ->
             hs_util:ok(jiffy:encode(Reply), State)
     end.
-
-%%%===================================================================
-%%% Internal functions
-%%%===================================================================
 
