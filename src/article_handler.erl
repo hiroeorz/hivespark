@@ -14,12 +14,13 @@
 -include("hivespark.hrl").
 
 %% API
--export([init/3, handle/2, terminate/2]).
+-export([init/3, handle/2, terminate/2, handle_route/2]).
 
 -record(state, {require_login = false :: boolean()}).
 
 %%%===================================================================
-%% @doc HTTP CallBacks
+%%% @doc HTTP CallBacks
+%%% @end
 %%%===================================================================
 
 init({tcp, http}, Req, Options) ->
@@ -35,41 +36,22 @@ terminate(_Req, _State) ->
 
 %%%===================================================================
 %%% @doc HTTP Handler
+%%% @end
 %%%===================================================================
-handle(Req, #state{require_login = true} = State) ->
-    {PathList, _} = cowboy_http_req:path(Req),
-    ParamList = hs_util:get_request_params(Req),
-    SessionKey = hs_session:get_session_key_with_req(Req),
+handle(Req, State) -> hs_router:handle(?MODULE, Req, State).
 
-    [<<"article">>, Action] = PathList,
-    Args = [ParamList, Req, State, SessionKey],
+handle_route(Action, Args) ->
+    case Action of
+        <<"create">>           -> create(Args);
+        <<"update">>           -> update(Args);
+        <<"teams_list">>       -> teams_list(Args);
+        <<"status_increment">> -> status_increment(Args);
+        <<"status_decrement">> -> status_decrement(Args)
+    end.
 
-    {Req2, NewState} = 
-        case hs_session:check_loggedin_with_req(Req) of
-            true ->
-                {StatusCode, H, Bin, NS} = 
-                    case Action of
-                        <<"create">>      -> create(Args);
-                        <<"update">>      -> update(Args);
-                        <<"teams_list">>      -> teams_list(Args);
-                        <<"status_increment">> -> status_increment(Args);
-                        <<"status_decrement">> -> status_decrement(Args)
-                    end,
-                
-                {hs_util:reply(StatusCode, H, Bin, Req), NS};
-            false ->
-                {StatusCode, H, B, NS} = hs_util:redirect_to("/auth/index", 
-                                                             [], State),
-                {hs_util:reply(StatusCode, H, B, Req), NS}
-        end,
-
-    {ok, Req2, NewState};
-
-handle(Req, #state{require_login = false} = State) ->
-    {ok, Req, State}.
-    
 %%%===================================================================
-%%% Request Handle Functions
+%%% @doc Request Handle Functions
+%%% @end
 %%%===================================================================
 
 create([ParamList, _Req, State, SessionKey]) ->

@@ -14,7 +14,7 @@
 -include("hivespark.hrl").
 
 %% API
--export([init/3, handle/2, terminate/2]).
+-export([init/3, handle/2, terminate/2, handle_route/2]).
 
 -record(state, {require_login = false :: boolean()}).
 
@@ -38,53 +38,32 @@ terminate(_Req, _State) ->
 %%%===================================================================
 %%% @doc HTTP Handler
 %%%===================================================================
-handle(Req, #state{require_login = true} = State) ->
-    {PathList, _} = cowboy_http_req:path(Req),
-    ParamList = hs_util:get_request_params(Req),
-    SessionKey = hs_session:get_session_key_with_req(Req),
+handle(Req, State) -> hs_router:handle(?MODULE, Req, State).
 
-    [<<"team">>, Action] = PathList,
-    Args = [ParamList, Req, State, SessionKey],
+handle_route(Action, Args) ->
+    case Action of
+        <<"index">>          -> index(Args);
+        <<"new">>            -> new(Args);
+        <<"show">>           -> show(Args);
+        <<"edit">>           -> edit(Args);
+        <<"upload_icon">>    -> upload_icon(Args);
+        <<"info">>           -> info(Args);
+        <<"create">>         -> create(Args);
+        <<"update">>         -> update(Args);
+        <<"all">>            -> all(Args);
+        <<"list">>           -> list(Args);
+        <<"statuses_list">>  -> statuses_list(Args);
+        <<"delete">>         -> delete(Args);
+        <<"add_usr">>        -> add_usr(Args);
+        <<"delete_usr">>     -> delete_usr(Args);
+        <<"checkin">>        -> checkin(Args);
+        <<"show_checkin">>   -> show_checkin(Args);
+        <<"send_message">>   -> send_message(Args);
+        <<"get_messages">>   -> get_messages(Args);
+        <<"image">>          -> image(Args);
+        <<"save_image">>     -> save_image(Args)
+    end.
 
-    {Req2, NewState} = 
-        case hs_session:check_loggedin_with_req(Req) of
-            true ->
-                {StatusCode, H, Bin, NS} = 
-                    case Action of
-                        <<"index">>          -> index(Args);
-                        <<"new">>            -> new(Args);
-                        <<"show">>           -> show(Args);
-                        <<"edit">>           -> edit(Args);
-                        <<"upload_icon">>    -> upload_icon(Args);
-                        <<"info">>           -> info(Args);
-                        <<"create">>         -> create(Args);
-                        <<"update">>         -> update(Args);
-                        <<"all">>            -> all(Args);
-                        <<"list">>           -> list(Args);
-                        <<"statuses_list">>  -> statuses_list(Args);
-                        <<"delete">>         -> delete(Args);
-                        <<"add_usr">>        -> add_usr(Args);
-                        <<"delete_usr">>     -> delete_usr(Args);
-                        <<"checkin">>        -> checkin(Args);
-                        <<"show_checkin">>   -> show_checkin(Args);
-                        <<"send_message">>   -> send_message(Args);
-                        <<"get_messages">>   -> get_messages(Args);
-                        <<"image">>          -> image(Args);
-                        <<"save_image">>     -> save_image(Args)
-                    end,
-                
-                {hs_util:reply(StatusCode, H, Bin, Req), NS};
-            false ->
-                {StatusCode, H, B, NS} = hs_util:redirect_to("/auth/index", 
-                                                             [], State),
-                {hs_util:reply(StatusCode, H, B, Req), NS}
-        end,
-
-    {ok, Req2, NewState};
-
-handle(Req, #state{require_login = false} = State) ->
-    {ok, Req, State}.
-    
 %%%===================================================================
 %%% Request Handle Functions
 %%%===================================================================

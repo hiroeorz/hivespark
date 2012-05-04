@@ -14,7 +14,7 @@
 -include("hivespark.hrl").
 
 %% API
--export([init/3, handle/2, terminate/2]).
+-export([init/3, handle/2, terminate/2, handle_route/2]).
 
 -record(state, {require_login = false :: boolean()}).
 
@@ -36,32 +36,23 @@ terminate(_Req, _State) ->
 %%%===================================================================
 %%% @doc HTTP Handler
 %%%===================================================================
-handle(Req, #state{require_login = true} = State) ->
-    {ok, Req, State};
+handle(Req, State) -> hs_router:handle(?MODULE, Req, State).
 
-handle(Req, #state{require_login = false} = State) ->
-    {PathList, _} = cowboy_http_req:path(Req),
-    ParamList = hs_util:get_request_params(Req),
-
-    [<<"auth">>, Action] = PathList,
-    Args = [ParamList, Req, State],
-
-    {StatusCode, H, Bin, NS} = case Action of
-                                   <<"index">>    ->  index(Args);
-                                   <<"login">> ->  login(Args)
-                               end,
-                
-    {Req2, NewState} = {hs_util:reply(StatusCode, H, Bin, Req), NS},
-    {ok, Req2, NewState}.
+handle_route(Action, Args) ->
+    ?debugVal(Action),
+    case Action of
+        <<"index">> -> index(Args);
+        <<"login">> -> login(Args)
+    end.
 
 %%%===================================================================
 %%% Request Handle Functions
 %%%===================================================================
 
-index([_ParamList, _Req, State]) ->
+index([_ParamList, _Req, State, _SessionKey]) ->
     hs_util:view("login.html", State).
 
-login([ParamList, _Req, State]) ->
+login([ParamList, _Req, State, _SessionKey]) ->
     Username = proplists:get_value(<<"username">>, ParamList),
     Password = proplists:get_value(<<"password">>, ParamList),
     Format = proplists:get_value(<<"format">>, ParamList),

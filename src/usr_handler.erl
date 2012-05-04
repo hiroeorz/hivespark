@@ -14,7 +14,7 @@
 -include("hivespark.hrl").
 
 %% API
--export([init/3, handle/2, terminate/2]).
+-export([init/3, handle/2, terminate/2, handle_route/2]).
 
 -record(state, {require_login = false :: boolean()}).
 
@@ -26,9 +26,9 @@
 
 init({tcp, http}, Req, Options) ->
     case lists:member(require_login, Options) of
-        true ->
+        true ->  
             {ok, Req, #state{require_login = true}};
-        false ->
+        false -> 
             {ok, Req, #state{require_login = false}}
     end.
 
@@ -38,40 +38,19 @@ terminate(_Req, _State) ->
 %%%===================================================================
 %%% @doc HTTP Handler
 %%%===================================================================
-handle(Req, #state{require_login = true} = State) ->
-    {PathList, _} = cowboy_http_req:path(Req),
-    ParamList = hs_util:get_request_params(Req),
-    SessionKey = hs_session:get_session_key_with_req(Req),
+handle(Req, State) -> hs_router:handle(?MODULE, Req, State).
 
-    [<<"usr">>, Action] = PathList,
-    Args = [ParamList, Req, State, SessionKey],
-
-    {Req2, NewState} = 
-        case hs_session:check_loggedin_with_req(Req) of
-            true ->
-                {StatusCode, H, Bin, NS} = 
-                    case Action of
-                        <<"edit">>        -> edit(Args);
-                        <<"upload_icon">> -> upload_icon(Args);
-                        <<"logout">>      -> logout(Args);
-                        <<"show_myself">> -> show_myself(Args);
-                        <<"show">>        -> show(Args);
-                        <<"update">>      -> update(Args);
-                        <<"image">>       -> image(Args);
-                        <<"save_image">>  -> save_image(Args)
-                    end,
-                
-                {hs_util:reply(StatusCode, H, Bin, Req), NS};
-            false ->
-                {StatusCode, H, B, NS} = hs_util:redirect_to("/auth/index", 
-                                                             [], State),
-                {hs_util:reply(StatusCode, H, B, Req), NS}
-        end,
-
-    {ok, Req2, NewState};
-
-handle(Req, #state{require_login = false} = State) ->
-    {ok, Req, State}.
+handle_route(Action, Args) ->
+    case Action of
+        <<"edit">>        -> edit(Args);
+        <<"upload_icon">> -> upload_icon(Args);
+        <<"logout">>      -> logout(Args);
+        <<"show_myself">> -> show_myself(Args);
+        <<"show">>        -> show(Args);
+        <<"update">>      -> update(Args);
+        <<"image">>       -> image(Args);
+        <<"save_image">>  -> save_image(Args)
+    end.
     
 %%%===================================================================
 %%% Request Handle Functions
