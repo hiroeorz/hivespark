@@ -19,7 +19,7 @@ __Authors:__ Hiroe Shin ([`shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net`](mai
 ##Function Index##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#abandon-1">abandon/1</a></td><td>delete session.</td></tr><tr><td valign="top"><a href="#check_loggedin-2">check_loggedin/2</a></td><td>check already loggedin user?.</td></tr><tr><td valign="top"><a href="#create-1">create/1</a></td><td>ceate new session, and return session key.</td></tr><tr><td valign="top"><a href="#del_value-2">del_value/2</a></td><td>delete session value with key.</td></tr><tr><td valign="top"><a href="#get_usr-1">get_usr/1</a></td><td>get usr record.</td></tr><tr><td valign="top"><a href="#get_value-2">get_value/2</a></td><td>get session value from key.</td></tr><tr><td valign="top"><a href="#set_value-3">set_value/3</a></td><td>set session value with key.</td></tr><tr><td valign="top"><a href="#start_link-0">start_link/0</a></td><td>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#abandon-1">abandon/1</a></td><td>delete session.</td></tr><tr><td valign="top"><a href="#check_loggedin-2">check_loggedin/2</a></td><td>check already loggedin user?.</td></tr><tr><td valign="top"><a href="#check_loggedin_with_req-1">check_loggedin_with_req/1</a></td><td></td></tr><tr><td valign="top"><a href="#create-1">create/1</a></td><td>ceate new session, and return session key.</td></tr><tr><td valign="top"><a href="#del_value-2">del_value/2</a></td><td>delete session value with key.</td></tr><tr><td valign="top"><a href="#get_session_key_with_req-1">get_session_key_with_req/1</a></td><td></td></tr><tr><td valign="top"><a href="#get_usr-1">get_usr/1</a></td><td>get usr record.</td></tr><tr><td valign="top"><a href="#get_value-2">get_value/2</a></td><td>get session value from key.</td></tr><tr><td valign="top"><a href="#set_value-3">set_value/3</a></td><td>set session value with key.</td></tr><tr><td valign="top"><a href="#start_link-0">start_link/0</a></td><td>
 Starts the server.</td></tr></table>
 
 
@@ -51,7 +51,17 @@ delete session.<a name="check_loggedin-2"></a>
 
 
 
-check already loggedin user?<a name="create-1"></a>
+check already loggedin user?<a name="check_loggedin_with_req-1"></a>
+
+###check_loggedin_with_req/1##
+
+
+
+
+<pre>check_loggedin_with_req(Req) -&gt; true | false</pre>
+<ul class="definitions"><li><pre>Req = [tuple()]</pre></li></ul>
+
+<a name="create-1"></a>
 
 ###create/1##
 
@@ -75,7 +85,17 @@ ceate new session, and return session key.<a name="del_value-2"></a>
 
 
 
-delete session value with key.<a name="get_usr-1"></a>
+delete session value with key.<a name="get_session_key_with_req-1"></a>
+
+###get_session_key_with_req/1##
+
+
+
+
+<pre>get_session_key_with_req(Req) -&gt; SessionKey</pre>
+<ul class="definitions"><li><pre>Req = [tuple()]</pre></li><li><pre>SessionKey = binary()</pre></li></ul>
+
+<a name="get_usr-1"></a>
 
 ###get_usr/1##
 
