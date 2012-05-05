@@ -19,7 +19,8 @@
 
 %% gen_server callbacks
 -export([create/1, get_value/2, set_value/3, del_value/2, get_usr/1, 
-         check_loggedin/2, abandon/1]).
+         check_loggedin/2, check_loggedin_with_req/1, 
+         get_session_key_with_req/1,abandon/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
@@ -117,6 +118,21 @@ check_loggedin(UsrId, SessionKey) when is_binary(UsrId) ->
                 _ -> false
             end
     end.
+
+-spec check_loggedin_with_req(Req) -> true | false when
+      Req :: [tuple()].
+check_loggedin_with_req(Req) ->
+    {Cookies, _} = cowboy_http_req:cookies(Req),
+    UsrId = proplists:get_value(<<"usr_id">>, Cookies),
+    SessionKey = proplists:get_value(<<"session_key">>, Cookies),
+    check_loggedin(UsrId, SessionKey).
+
+-spec get_session_key_with_req(Req) -> SessionKey when
+      Req :: [tuple()],
+      SessionKey :: binary().
+get_session_key_with_req(Req) ->
+    {Cookies, _} = cowboy_http_req:cookies(Req),
+    proplists:get_value(<<"session_key">>, Cookies).
 
 %%--------------------------------------------------------------------
 %% @doc ceate new session, and return session key.

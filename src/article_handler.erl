@@ -1,27 +1,60 @@
 %%%-------------------------------------------------------------------
-%%% @author Hiroe Shin <shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net>
+%%% @author Hiroe Shin <hiroe.orz@gmail.com>
 %%% @copyright (C) 2012, Hiroe Shin
 %%% @doc
 %%%
 %%% @end
-%%% Created : 22 Feb 2012 by Hiroe Shin <shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net>
+%%% Created : 16 Feb 2012 by Hiroe Shin <hiroe.orz@gmail.com>
 %%%-------------------------------------------------------------------
--module(article_controller).
+-module(article_handler).
+-behaviour(cowboy_http_handler).
 
 %% Include
 -include_lib("eunit/include/eunit.hrl").
 -include("hivespark.hrl").
 
 %% API
--export([create/4, update/4, 
-         teams_list/4, status_increment/4, status_decrement/4]).
+-export([init/3, handle/2, terminate/2, handle_route/2]).
 
+-record(state, {require_login = false :: boolean()}).
 
 %%%===================================================================
-%%% API
+%%% @doc HTTP CallBacks
+%%% @end
 %%%===================================================================
 
-create(ParamList, _Req, State, SessionKey) ->
+init({tcp, http}, Req, Options) ->
+    case lists:member(require_login, Options) of
+        true ->
+            {ok, Req, #state{require_login = true}};
+        false ->
+            {ok, Req, #state{require_login = false}}
+    end.
+
+terminate(_Req, _State) ->
+    ok.
+
+%%%===================================================================
+%%% @doc HTTP Handler
+%%% @end
+%%%===================================================================
+handle(Req, State) -> hs_router:handle(?MODULE, Req, State).
+
+handle_route(Action, Args) ->
+    case Action of
+        <<"create">>           -> create(Args);
+        <<"update">>           -> update(Args);
+        <<"teams_list">>       -> teams_list(Args);
+        <<"status_increment">> -> status_increment(Args);
+        <<"status_decrement">> -> status_decrement(Args)
+    end.
+
+%%%===================================================================
+%%% @doc Request Handle Functions
+%%% @end
+%%%===================================================================
+
+create([ParamList, _Req, State, SessionKey]) ->
     TeamIdBin = proplists:get_value(<<"team_id">>, ParamList),
     TeamId = list_to_integer(binary_to_list(TeamIdBin)),
     TextBin = proplists:get_value(<<"text">>, ParamList),
@@ -47,7 +80,7 @@ create(ParamList, _Req, State, SessionKey) ->
             end,    
     hs_util:ok(jiffy:encode(Reply), State).    
 
-update(ParamList, _Req, State, SessionKey) ->
+update([ParamList, _Req, State, SessionKey]) ->
     Usr = hs_session:get_usr(SessionKey),
     Title = proplists:get_value(<<"title">>, ParamList),
     Text = proplists:get_value(<<"text">>, ParamList),
@@ -71,7 +104,7 @@ update(ParamList, _Req, State, SessionKey) ->
             end
     end.
 
-teams_list(ParamList, _Req, State, _SessionKey) ->
+teams_list([ParamList, _Req, State, _SessionKey]) ->
     TeamId = proplists:get_value(<<"team_id">>, ParamList),
     Count = case proplists:get_value(<<"count">>, ParamList) of
                 undefined -> 40;
@@ -95,22 +128,26 @@ teams_list(ParamList, _Req, State, _SessionKey) ->
             end,
     hs_util:ok(jiffy:encode(Reply), State).
 
-status_increment(ParamList, _Req, State, SessionKey) ->
+status_increment([ParamList, _Req, State, SessionKey]) ->
     Usr = hs_session:get_usr(SessionKey),
     ArticleId = proplists:get_value(<<"article_id">>, ParamList),
 
     case hs_article_db:lookup_id(ArticleId) of
         {ok, Article} -> 
-            case Article#article.progress of
-                100 -> status_add(1, Usr, Article, State);
-                _ ->
-                    case Article#article.status of
-                        0 -> status_add(1, Usr, Article, State);
-                        1 -> status_add(1, Usr, Article, State);
+            case hs_team:is_member(Article#article.team_id, Usr#usr.id) of
+                false -> hs_util:forbidden(State);
+                true ->
+                    case Article#article.progress of
+                        100 -> status_add(1, Usr, Article, State);
                         _ ->
-                            Reply = {[{<<"result">>, false},
-                                      {article, hs_article_db:to_tuple(Article)}]},
-                            hs_util:ok(jiffy:encode(Reply), State)
+                            case Article#article.status of
+                                0 -> status_add(1, Usr, Article, State);
+                                1 -> status_add(1, Usr, Article, State);
+                                _ ->
+                                    Reply = {[{<<"result">>, false},
+                                              {article, hs_article_db:to_tuple(Article)}]},
+                                    hs_util:ok(jiffy:encode(Reply), State)
+                            end
                     end
                 end;
         {error, Reason} ->
@@ -119,7 +156,7 @@ status_increment(ParamList, _Req, State, SessionKey) ->
             hs_util:not_found(Reply, State)
     end.
 
-status_decrement(ParamList, _Req, State, SessionKey) ->
+status_decrement([ParamList, _Req, State, SessionKey]) ->
     Usr = hs_session:get_usr(SessionKey),
     ArticleId = proplists:get_value(<<"article_id">>, ParamList),
 
@@ -152,5 +189,3 @@ status_add(AddValue, Usr, Article, State) ->
                       {<<"reason">>, <<"not found">>}]},
             hs_util:not_found(jiffy:encode(Reply), State)
     end.
-
-

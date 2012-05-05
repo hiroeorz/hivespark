@@ -1,6 +1,6 @@
 
 
-#Module hs_http_handler#
+#Module usr_public_handler#
 * [Description](#description)
 * [Function Index](#index)
 * [Function Details](#functions)
@@ -47,7 +47,7 @@ HTTP Handler
 
 
 
-`init(X1, Req, Opts) -> any()`
+`init(X1, Req, Options) -> any()`
 
 
 

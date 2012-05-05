@@ -38,12 +38,13 @@ __Authors:__ Hiroe Shin ([`shin@mac-hiroe-orz-17.local`](mailto:shin@mac-hiroe-o
 引数で与えられた拡張しに対応するMineTypeを返す。.</td></tr><tr><td valign="top"><a href="#forbidden-1">forbidden/1</a></td><td>
 HTTPステータスコード403でアクセス権が無い事を示すレスポンスを返します。.</td></tr><tr><td valign="top"><a href="#forbidden-2">forbidden/2</a></td><td></td></tr><tr><td valign="top"><a href="#get_multi_data-1">get_multi_data/1</a></td><td>
 "multipart form-data" リクエストからファイルデータを取り出す。.</td></tr><tr><td valign="top"><a href="#get_param_data-1">get_param_data/1</a></td><td>
-"multipart form-data" リクエストからパラメータのリストを取り出す。.</td></tr><tr><td valign="top"><a href="#not_authenticated-1">not_authenticated/1</a></td><td>
+"multipart form-data" リクエストからパラメータのリストを取り出す。.</td></tr><tr><td valign="top"><a href="#get_request_params-1">get_request_params/1</a></td><td>
+リクエストパラメータを取り出してtupleのlistとして返します。.</td></tr><tr><td valign="top"><a href="#not_authenticated-1">not_authenticated/1</a></td><td>
 HTTPステータスコード401でユーザ認証が必要だと伝える為のレスポンスを返します。.</td></tr><tr><td valign="top"><a href="#not_authenticated-2">not_authenticated/2</a></td><td></td></tr><tr><td valign="top"><a href="#not_authenticated-3">not_authenticated/3</a></td><td></td></tr><tr><td valign="top"><a href="#not_found-1">not_found/1</a></td><td>
 HTTPステータスコード404で"Not Found"のレスポンスを返します。.</td></tr><tr><td valign="top"><a href="#not_found-2">not_found/2</a></td><td></td></tr><tr><td valign="top"><a href="#ok-2">ok/2</a></td><td>
 HTTPステータスコード200でHTTPレスポンスを返します。.</td></tr><tr><td valign="top"><a href="#ok-3">ok/3</a></td><td></td></tr><tr><td valign="top"><a href="#pgdaatetime_to_seconds-1">pgdaatetime_to_seconds/1</a></td><td></td></tr><tr><td valign="top"><a href="#priv_dir-0">priv_dir/0</a></td><td>
 privディレクトリへのパスを返す。.</td></tr><tr><td valign="top"><a href="#redirect_to-2">redirect_to/2</a></td><td>
-HTTPステータスコード307でHTTPリダイレクト要求のレスポンスを返します。.</td></tr><tr><td valign="top"><a href="#redirect_to-3">redirect_to/3</a></td><td></td></tr><tr><td valign="top"><a href="#view-2">view/2</a></td><td>
+HTTPステータスコード307でHTTPリダイレクト要求のレスポンスを返します。.</td></tr><tr><td valign="top"><a href="#redirect_to-3">redirect_to/3</a></td><td></td></tr><tr><td valign="top"><a href="#reply-2">reply/2</a></td><td></td></tr><tr><td valign="top"><a href="#reply-4">reply/4</a></td><td></td></tr><tr><td valign="top"><a href="#view-2">view/2</a></td><td>
 HTMLファイルを読み込んでクライアントに返します。.</td></tr><tr><td valign="top"><a href="#view-3">view/3</a></td><td></td></tr></table>
 
 
@@ -151,7 +152,20 @@ HTTPステータスコード403でアクセス権が無い事を示すレスポ�
 
 
 
-"multipart form-data" リクエストからパラメータのリストを取り出す。<a name="not_authenticated-1"></a>
+"multipart form-data" リクエストからパラメータのリストを取り出す。<a name="get_request_params-1"></a>
+
+###get_request_params/1##
+
+
+
+
+<pre>get_request_params(Req) -&gt; ParamList</pre>
+<ul class="definitions"><li><pre>Req = any()</pre></li><li><pre>ParamList = [tuple()]</pre></li></ul>
+
+
+
+
+リクエストパラメータを取り出してtupleのlistとして返します。<a name="not_authenticated-1"></a>
 
 ###not_authenticated/1##
 
@@ -272,6 +286,24 @@ HTTPステータスコード307でHTTPリダイレクト要求のレスポンス
 
 
 `redirect_to(Url, Header, State) -> any()`
+
+<a name="reply-2"></a>
+
+###reply/2##
+
+
+
+
+`reply(Status, Req) -> any()`
+
+<a name="reply-4"></a>
+
+###reply/4##
+
+
+
+
+`reply(Status, Headers, Body, Req) -> any()`
 
 <a name="view-2"></a>
 

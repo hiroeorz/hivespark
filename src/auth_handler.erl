@@ -1,28 +1,58 @@
 %%%-------------------------------------------------------------------
-%%% @author Hiroe Shin <shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net>
+%%% @author Hiroe Shin <hiroe.orz@gmail.com>
 %%% @copyright (C) 2012, Hiroe Shin
 %%% @doc
 %%%
 %%% @end
-%%% Created : 22 Feb 2012 by Hiroe Shin <shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net>
+%%% Created : 16 Feb 2012 by Hiroe Shin <hiroe.orz@gmail.com>
 %%%-------------------------------------------------------------------
--module(auth_controller).
+-module(auth_handler).
+-behaviour(cowboy_http_handler).
 
 %% Include
 -include_lib("eunit/include/eunit.hrl").
 -include("hivespark.hrl").
 
 %% API
--export([index/3, login/3]).
+-export([init/3, handle/2, terminate/2, handle_route/2]).
+
+-record(state, {require_login = false :: boolean()}).
 
 %%%===================================================================
-%%% API
+%% @doc HTTP CallBacks
 %%%===================================================================
 
-index(_ParamList, _Req, State) ->
+init({tcp, http}, Req, Options) ->
+    case lists:member(require_login, Options) of
+        true ->
+            {ok, Req, #state{require_login = true}};
+        false ->
+            {ok, Req, #state{require_login = false}}
+    end.
+
+terminate(_Req, _State) ->
+    ok.
+
+%%%===================================================================
+%%% @doc HTTP Handler
+%%%===================================================================
+handle(Req, State) -> hs_router:handle(?MODULE, Req, State).
+
+handle_route(Action, Args) ->
+    ?debugVal(Action),
+    case Action of
+        <<"index">> -> index(Args);
+        <<"login">> -> login(Args)
+    end.
+
+%%%===================================================================
+%%% Request Handle Functions
+%%%===================================================================
+
+index([_ParamList, _Req, State, _SessionKey]) ->
     hs_util:view("login.html", State).
 
-login(ParamList, _Req, State) ->
+login([ParamList, _Req, State, _SessionKey]) ->
     Username = proplists:get_value(<<"username">>, ParamList),
     Password = proplists:get_value(<<"password">>, ParamList),
     Format = proplists:get_value(<<"format">>, ParamList),
@@ -62,7 +92,3 @@ login(ParamList, _Req, State) ->
                     hs_util:not_authenticated(jiffy:encode({Reply}), State)
             end
     end.
-
-%%%===================================================================
-%%% Internal functions
-%%%===================================================================
