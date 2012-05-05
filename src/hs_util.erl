@@ -10,6 +10,7 @@
 
 %% Include
 -include_lib("eunit/include/eunit.hrl").
+-include("deps/cowboy/include/http.hrl").
 -include("hivespark.hrl").
 
 %% API
@@ -21,7 +22,7 @@
          priv_dir/0, ext_part/1, ext_type/1, 
          get_multi_data/1, get_param_data/1, acc_multipart/2,
          create_datetime_string/1, pgdaatetime_to_seconds/1,
-         get_request_params/1, reply/4, reply/2]).
+         get_request_params/1, reply/4, reply/2, create_args/2]).
 
 -define(MultiPartDataPattern, [{<<"Content-Disposition">>, <<"form-data; name=\"fileName\"; filename=", _N/binary>>}, {'Content-Type', Type}]).
 
@@ -292,7 +293,8 @@ get_request_params(Req) ->
                         {ParamList2, _} -> ParamList2;
                         _ -> []
                     end
-            end
+            end;
+        _ -> []
     end.
 
                         
@@ -303,6 +305,19 @@ reply(Status, Headers, Body, Req) ->
 reply(Status, Req) ->
     {ok, Req2} = cowboy_http_req:reply(Status, Req),
     Req2.
+
+%%--------------------------------------------------------------------
+%% @doc
+%% リクエストから、アクションに渡す引数となるリストを作る。
+%% @end
+%%--------------------------------------------------------------------
+-spec create_args(Req, State) -> list() when
+      Req :: #http_req{},
+      State :: cowboy:status().
+create_args(Req, State) ->
+    ParamList = hs_util:get_request_params(Req),
+    SessionKey = hs_session:get_session_key_with_req(Req),
+    [ParamList, Req, State, SessionKey].
 
 %%%===================================================================
 %%% Internal functions

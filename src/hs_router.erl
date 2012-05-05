@@ -9,7 +9,7 @@
 -module(hs_router).
 
 %% API
--export([handle/3]).
+-export([handle/3, check_accessable/2]).
 
 -record(state, {require_login = false :: boolean()}).
 
@@ -25,11 +25,8 @@
 %%--------------------------------------------------------------------
 
 handle(Module, Req, #state{require_login = true} = State) ->
-    {PathList, _} = cowboy_http_req:path(Req),
-    ParamList = hs_util:get_request_params(Req),
-    SessionKey = hs_session:get_session_key_with_req(Req),
-    [_, Action] = PathList,
-    Args = [ParamList, Req, State, SessionKey],
+    {[_, Action], _} = cowboy_http_req:path(Req),
+    Args = hs_util:create_args(Req, State),
 
     {Req2, NewState} = 
         case hs_session:check_loggedin_with_req(Req) of
@@ -45,15 +42,15 @@ handle(Module, Req, #state{require_login = true} = State) ->
     {ok, Req2, NewState};
 
 handle(Module, Req, #state{require_login = false} = State) ->
-    {PathList, _} = cowboy_http_req:path(Req),
-    ParamList = hs_util:get_request_params(Req),
-    SessionKey = hs_session:get_session_key_with_req(Req),
-    [_, Action] = PathList,
-    Args = [ParamList, Req, State, SessionKey],
+    {[_, Action], _} = cowboy_http_req:path(Req),
+    Args = hs_util:create_args(Req, State),
     {StatusCode, H, Bin, NS} = Module:handle_route(Action, Args),
     {Req2, NewState} = {hs_util:reply(StatusCode, H, Bin, Req), NS},
     {ok, Req2, NewState}.
 
+check_accessable(_Req, #state{require_login = false}) -> true;
+check_accessable(Req, #state{require_login = true}) -> 
+    hs_session:check_loggedin_with_req(Req).
 
 %%%===================================================================
 %%% Internal functions

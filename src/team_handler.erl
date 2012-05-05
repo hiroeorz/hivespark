@@ -15,6 +15,7 @@
 
 %% API
 -export([init/3, handle/2, terminate/2, handle_route/2]).
+-export([all/1, info/1, create/1, delete/1]).
 
 -record(state, {require_login = false :: boolean()}).
 
@@ -118,7 +119,11 @@ create([ParamList, _Req, State, SessionKey]) ->
         <<"html">> ->
             hs_util:redirect_to("/team/index", State);
         _ ->
-            hs_util:ok(jiffy:encode({Reply}), State)
+            {TeamElem} = proplists:get_value(team, Reply),
+            TeamId = proplists:get_value(id, TeamElem),
+            Location = "/rest/team/" ++ integer_to_list(TeamId),
+            hs_util:ok([{<<"Location">>, list_to_binary(Location)}], 
+                       jiffy:encode({Reply}), State)
     end.
             
 update([ParamList, _Req, State, SessionKey]) ->

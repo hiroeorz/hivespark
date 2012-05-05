@@ -49,6 +49,10 @@ start_http_listener(Port, ListenerCount) when is_integer(Port) and
     Dispatch = 
         [{'_',[SharedDispatch,
                {[<<"websocket">>], hs_websocket_handler, []},
+
+               {[<<"rest">>, <<"team">>, '...'], 
+                team_rest_handler, [require_login]},
+
                {[<<"team">>, '...'], team_handler, [require_login]},
                {[<<"usr">>, '...'], usr_handler, [require_login]},
                {[<<"article">>, '...'], article_handler, [require_login]},
