@@ -89,7 +89,6 @@ info([ParamList, _Req, State, SessionKey]) ->
     TeamId = proplists:get_value(<<"team_id">>, ParamList),
     case hs_team:lookup_id(TeamId) of
         {ok, Team} -> 
-            ?debugVal(Team),
             Reply = {[{team, hs_team:to_tuple(Team)},
                       {is_member, hs_team:is_member(Team#team.id, Usr#usr.id)},
                       {is_owner, hs_team:is_owner(Team#team.id, Usr#usr.id)} ]},

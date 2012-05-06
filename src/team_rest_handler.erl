@@ -44,9 +44,21 @@ content_types_accepted(Req, State) ->
     {[{{<<"text">>, <<"html">>, []}, from_text},
       {{<<"application">>, <<"json">>, []}, from_json}], Req, State}.
 
-post_is_create(Req, State) ->
+%%===================================================================
+%% @doc
+%% チームの新規作成
+%% @end
+%%===================================================================
+-spec post_is_create(Req, State) -> {boolean(), Req, State} when
+      Req :: #http_req{},
+      State :: #state{}.
+ post_is_create(Req, State) ->
     {true, Req, State}.
 
+-spec create_path(Req, State) -> {Location | halt, Req, State} when
+      Req :: #http_req{},
+      State :: #state{},      
+      Location :: binary().
 create_path(Req, State) ->
     case hs_router:check_accessable(Req, State) of
         false -> {false, Req, State};
@@ -65,6 +77,14 @@ create_path(Req, State) ->
             end
     end.
 
+%%===================================================================
+%% @doc
+%% チームの削除
+%% @end
+%%===================================================================
+-spec delete_resource(Req, State) -> {true | false, Req, State} when
+      Req :: #http_req{},
+      State :: #state{}.
 delete_resource(Req, State) ->
     case hs_router:check_accessable(Req, State) of
         false -> {false, Req, State};
@@ -82,7 +102,10 @@ delete_resource(Req, State) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-
+-spec get_text_html(Req, State) -> {Data | false, Req, State} when
+      Req :: #http_req{},
+      State :: #state{},
+      Data :: binary().      
 get_text_html(Req, State) ->
     Args = hs_util:create_args(Req, State),
 
@@ -97,12 +120,17 @@ get_text_html(Req, State) ->
             Args1 = [[{<<"team_id">>, TeamId} | ParamList1] | Tail],
 
             case team_handler:info(Args1) of
-                {200, _, Data, _} -> 
-                    ?debugVal(Data),
-                    {Data, Req, State};
+                {200, _, Data, _} -> {Data, Req, State};
                 _ -> {false, Req, State}
             end
     end.
  
+-spec from_html(Req, State) -> {true | false, Req, State} when
+      Req :: #http_req{},
+      State :: #state{}.
 from_html(Req, State) -> {true, Req, State}.
+
+-spec from_json(Req, State) -> {true | false, Req, State} when
+      Req :: #http_req{},
+      State :: #state{}.
 from_json(Req, State) -> {true, Req, State}.

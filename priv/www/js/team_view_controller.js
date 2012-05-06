@@ -717,9 +717,9 @@ HS.TeamViewController.prototype = (function () {
 	/**
 	 * 画面表示直後に呼ばれる
 	 *
-	 * @method viewDidLoad
+	 * @method view_did_load
 	 */
-	viewDidLoad: function () {
+	view_did_load: function () {
 	    var self = this;
 	    var params = new HS.Util().qs_vals();
 	    set_default_event_lister(params);

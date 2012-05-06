@@ -13,7 +13,7 @@ HS.TeamListViewController.prototype = (function () {
 
     /* private */
 	
-    var getUserInfo = function() {
+    var get_usr_info = function() {
 	$.getJSON("/usr/show_myself",
 		  function(json) {
 		      $("div#profile img").attr("src", json.usr.icon_url);
@@ -79,12 +79,12 @@ HS.TeamListViewController.prototype = (function () {
 	/**
 	 * 画面表示直後に呼ばれる
 	 *
-	 * @method viewDidLoad
+	 * @method view_did_load
 	 */
-	viewDidLoad: function() {
+	view_did_load: function() {
 	    var self = this;
-	    getUserInfo();
-	    self.reloadAllTeamViews();
+	    get_usr_info();
+	    self.reload_all_team_views();
 	},
 	
 	/**
@@ -92,7 +92,7 @@ HS.TeamListViewController.prototype = (function () {
 	 *
 	 * @method reloadAllTeamViews
 	 */
-	reloadAllTeamViews: function() {
+	reload_all_team_views: function() {
 	    var self = this;
 	    $("ul#burning-teams").empty();
 	    $("ul#stop-teams").empty();
