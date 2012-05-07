@@ -15,5 +15,9 @@ HS.Util.prototype = {
 	}
 
 	return arg;
+    },
+
+    sanitize: function(str) {
+	$("<div />").text(str).html();
     }
 }

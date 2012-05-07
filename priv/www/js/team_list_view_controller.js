@@ -17,7 +17,7 @@ HS.TeamListViewController.prototype = (function () {
 	$.getJSON("/usr/show_myself",
 		  function(json) {
 		      $("div#profile img").attr("src", json.usr.icon_url);
-		      $("span#my-project-count").html(json.usr.team_id_count);
+		      $("span#my-project-count").text(json.usr.team_id_count);
 		  });
     };
 

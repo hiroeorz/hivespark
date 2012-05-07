@@ -23,7 +23,7 @@ HS.TeamViewController.prototype = (function () {
 	$.getJSON("/usr/show_myself",
 		  function (json) {
 		      $("div#profile img").attr("src", json.usr.icon_url);
-		      $("span#my-project-count").html(json.usr.team_id_count);
+		      $("span#my-project-count").text(json.usr.team_id_count);
 		  });
     };
     
@@ -36,11 +36,11 @@ HS.TeamViewController.prototype = (function () {
 	$.getJSON("/team/info?team_id=" + team_id,
 		  function (json) {
 		      var team = json.team;
-		      $("#project-name").html(team.name);
-		      $("#project-description").html(team.description);
+		      $("#project-name").text(team.name);
+		      $("#project-description").text(team.description);
 		      $("img#team-image").attr("src", team.icon_url);
 		      $("div#member-area ul.members").empty();
-		      $("div#team-status span").html(team.status_description);
+		      $("div#team-status span").text(team.status_description);
 
 		      for (var i = 0; i < team.members.length; i++) {
 			  var usr = team.members[i];
@@ -570,7 +570,7 @@ HS.TeamViewController.prototype = (function () {
     /**
      * サブメニューのリンク設定を行う
      *
-     * @method setTeamMenu
+     * @method set_team_menu
      */
     var set_team_menu = function(team_id) {
 	$("a#team-edit").attr("href", "/team/edit?team_id=" + team_id);
@@ -578,6 +578,11 @@ HS.TeamViewController.prototype = (function () {
 				     "/team/upload_icon?team_id=" + team_id);
     };
 
+    /**
+     * サブメニューの削除を行う
+     *
+     * @method destroy
+     */
     var destroy = function(team_id) {
 	if (confirm("本当にこのチームを削除しますか？")) {
 	    $.post("/team/delete", {team_id:team_id},
@@ -591,6 +596,11 @@ HS.TeamViewController.prototype = (function () {
 	}
     }
 
+    /**
+     * 新しいチケットを発行する
+     *
+     * @method add_new_ticket
+     */
     var add_new_ticket = function(event) {
 	var team_id = event.data.team_id;
 	var title = $("#new-ticket-title").val();
@@ -635,7 +645,7 @@ HS.TeamViewController.prototype = (function () {
 				     add_new_ticket);
 
 	$("#new-message-button").bind("click", {team_id: params.team_id}, 
-				     add_new_message);
+				      add_new_message);
 
 	$("#message-refresh_button").bind("click", function() { 
 	    get_messages(params.team_id);
