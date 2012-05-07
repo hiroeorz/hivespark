@@ -151,7 +151,6 @@ list_of_usr(UsrId, Count) when is_integer(UsrId) and
 to_tuple(Article) ->
     {ok, Usr} = hs_usr:lookup_id(Article#article.usr_id),
     {ok, Team} = hs_team:lookup_id(Article#article.team_id),
-    ?debugVal(Article#article.created_at),
     DateTime = hs_util:create_datetime_string(Article#article.created_at),
 
     {[{id, Article#article.id}, {usr, hs_usr:to_tuple(Usr)},

@@ -8,6 +8,10 @@
 %%%-------------------------------------------------------------------
 -module(hs_router).
 
+%% Include
+-include_lib("eunit/include/eunit.hrl").
+-include("hivespark.hrl").
+
 %% API
 -export([handle/3, check_accessable/2]).
 
@@ -42,6 +46,7 @@ handle(Module, Req, #state{require_login = true} = State) ->
     {ok, Req2, NewState};
 
 handle(Module, Req, #state{require_login = false} = State) ->
+    ?debugVal(cowboy_http_req:path(Req)),
     {[_, Action], _} = cowboy_http_req:path(Req),
     Args = hs_util:create_args(Req, State),
     {StatusCode, H, Bin, NS} = Module:handle_route(Action, Args),
