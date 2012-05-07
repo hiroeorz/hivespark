@@ -19,7 +19,7 @@
          checkin_members/1, checkin/3, checkout/3, to_tuple/1, 
          is_member/2, is_owner/2,
          add_message/1, get_messages/3, get_members/1, get_articles/4,
-         add_article/1, statuses_list/2]).
+         add_article/1, statuses_list/2, get_messages_by_since_id/2]).
 
 -export([start_child/1, start_link/1]).
 
@@ -266,7 +266,7 @@ add_article(Art=#article{usr_id=UsrId, text=Text, team_id=TeamId}) when
     hs_article_db:insert(Art).
 
 %%--------------------------------------------------------------------
-%% @doc add message to users timeline.
+%% @doc add message to team timeline.
 %% @end
 %%--------------------------------------------------------------------
 -spec get_messages(TeamId, Offset, Count) -> 
@@ -285,6 +285,23 @@ get_messages(TeamId, Offset, Count) when is_integer(TeamId) ->
             hs_message_db:list_of_team(TeamId, Offset, Count);
         {ok, Ids} -> {ok, hs_message:mget_msg(Ids)}
     end.        
+
+%%--------------------------------------------------------------------
+%% @doc add message to team timeline.
+%% @end
+%%--------------------------------------------------------------------
+-spec get_messages_by_since_id(TeamId, SinceId) -> 
+                                {ok, MessageList} | {error, not_found}  when
+      TeamId :: integer() | binary(),
+      SinceId:: binary(),
+      MessageList :: [#message{}] | [].
+get_messages_by_since_id(TeamId, SinceId) when is_binary(SinceId) ->
+    case get_message_ids_since(TeamId, SinceId) of
+        {ok, []} ->
+            spawn(fun() -> load_messages_to_cache(TeamId) end),
+            hs_message_db:list_of_team_by_since_id(TeamId, SinceId);
+        {ok, Ids} -> {ok, hs_message:mget_msg(Ids)}
+    end.
 
 %%--------------------------------------------------------------------
 %% @doc get team list of given status.
@@ -491,6 +508,37 @@ get_message_ids(TeamId, Offset, Count) ->
     case eredis_pool:q(?DB_SRV, ["LRANGE", Key, EndPos, StartPos]) of
         {ok, undefined} -> {error, not_found};
         {ok, MsgIdList} -> {ok, MsgIdList}
+    end.
+
+-spec get_message_ids_since(TeamId, SinceId) ->
+                                   {ok, MsgIdList} | {error, not_found} when
+      TeamId :: integer(),
+      SinceId :: binary(),
+      MsgIdList :: [binary()].
+get_message_ids_since(TeamId, SinceId) when is_binary(SinceId) ->
+    get_message_ids_since(TeamId, SinceId, -1, -10, []).
+
+get_message_ids_since(TeamId, SinceId, StartPos, EndPos, Results) ->
+    Key = get_key_of_timeline(TeamId),
+    case eredis_pool:q(?DB_SRV, ["LRANGE", Key, EndPos, StartPos]) of
+        {ok, undefined} -> {error, not_found};
+        {ok, []} -> {ok, lists:flatten([Results])};
+        {ok, MsgIdList} ->
+            case message_parts_since(MsgIdList, SinceId, []) of
+                {eof, IdList} -> {ok, lists:flatten([IdList | Results])};
+                {next, IdList} -> 
+                   get_message_ids_since(TeamId, SinceId, 
+                                         EndPos - 1, EndPos - 10, 
+                                         [IdList | Results])
+            end
+    end.        
+
+message_parts_since([], _SinceId, ResultList) -> 
+    {next, lists:reverse(ResultList)};
+message_parts_since([Id | Tail], SinceId, ResultList) ->
+    case Id of
+        SinceId -> {eof, lists:reverse(ResultList)};
+        _ -> message_parts_since(Tail, SinceId, [Id | ResultList])
     end.
 
 -spec load_messages_to_cache(TeamId) -> ok when

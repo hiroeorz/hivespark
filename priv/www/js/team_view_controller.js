@@ -657,6 +657,7 @@ HS.TeamViewController.prototype = (function () {
      *
      * @method get_messages
      */
+    var last_mesage_id = 0;
     var get_messages = function(team_id) {
 	$("ul#timeline").empty();
 	$.getJSON("/team/get_messages?team_id=" + team_id,

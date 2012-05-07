@@ -13,7 +13,8 @@
 -include("hivespark.hrl").
 
 %% API
--export([q/1, q/2, insert/1, get_msg/1, list_of_team/3, list_of_usr/2]).
+-export([q/1, q/2, insert/1, get_msg/1, list_of_team/3, 
+         list_of_team_by_since_id/2, list_of_usr/2]).
 
 -export([parse_result/3]).
 
@@ -98,6 +99,25 @@ list_of_team(TeamId, Offset, Count) when is_integer(TeamId) and
     q("select * from messages where team_id = $1
          order by id desc limit $2 offset $3", 
       [TeamId, Count, Offset]).
+
+-spec list_of_team_by_since_id(TeamId, SinceId) -> {ok, Messages} | 
+                                                   {error, Reason} when
+      TeamId :: integer() | binary(),
+      SinceId :: integer() | binary(),
+      Messages :: [#message{}],
+      Reason :: atom().      
+list_of_team_by_since_id(TeamId, SinceId) when is_binary(TeamId) and
+                                               is_binary(SinceId) ->
+    list_of_team_by_since_id(list_to_integer(binary_to_list(TeamId)), 
+                             list_to_integer(binary_to_list(SinceId)));
+
+list_of_team_by_since_id(TeamId, SinceId) when is_integer(TeamId) and
+                                               is_integer(SinceId) ->
+
+    q("select * from messages 
+         where team_id = $1 and id > $2
+         order by id desc", 
+      [TeamId, SinceId]).
     
 -spec list_of_usr(UsrId, Count) -> {ok, Messages} | {error, Reason} when
       UsrId :: integer() | binary(),
