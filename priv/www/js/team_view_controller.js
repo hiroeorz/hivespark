@@ -753,8 +753,8 @@ HS.TeamViewController.prototype = (function () {
     };
 
     /* 新規メッセージを確認するインターバル */
-    var check_new_message_interval = 1000 * 3;	
-    //var check_new_message_interval = 60000 * 3;	
+    //var check_new_message_interval = 1000 * 3;	
+    var check_new_message_interval = 60000 * 3;	
 
     /* public */
     return {
