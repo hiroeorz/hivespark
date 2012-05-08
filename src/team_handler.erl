@@ -43,26 +43,27 @@ handle(Req, State) -> hs_router:handle(?MODULE, Req, State).
 
 handle_route(Action, Args) ->
     case Action of
-        <<"index">>          -> index(Args);
-        <<"new">>            -> new(Args);
-        <<"show">>           -> show(Args);
-        <<"edit">>           -> edit(Args);
-        <<"upload_icon">>    -> upload_icon(Args);
-        <<"info">>           -> info(Args);
-        <<"create">>         -> create(Args);
-        <<"update">>         -> update(Args);
-        <<"all">>            -> all(Args);
-        <<"list">>           -> list(Args);
-        <<"statuses_list">>  -> statuses_list(Args);
-        <<"delete">>         -> delete(Args);
-        <<"add_usr">>        -> add_usr(Args);
-        <<"delete_usr">>     -> delete_usr(Args);
-        <<"checkin">>        -> checkin(Args);
-        <<"show_checkin">>   -> show_checkin(Args);
-        <<"send_message">>   -> send_message(Args);
-        <<"get_messages">>   -> get_messages(Args);
-        <<"image">>          -> image(Args);
-        <<"save_image">>     -> save_image(Args)
+        <<"index">>            -> index(Args);
+        <<"new">>              -> new(Args);
+        <<"show">>             -> show(Args);
+        <<"edit">>             -> edit(Args);
+        <<"upload_icon">>      -> upload_icon(Args);
+        <<"info">>             -> info(Args);
+        <<"create">>           -> create(Args);
+        <<"update">>           -> update(Args);
+        <<"all">>              -> all(Args);
+        <<"list">>             -> list(Args);
+        <<"statuses_list">>    -> statuses_list(Args);
+        <<"delete">>           -> delete(Args);
+        <<"add_usr">>          -> add_usr(Args);
+        <<"delete_usr">>       -> delete_usr(Args);
+        <<"checkin">>          -> checkin(Args);
+        <<"show_checkin">>     -> show_checkin(Args);
+        <<"send_message">>     -> send_message(Args);
+        <<"get_messages">>     -> get_messages(Args);
+        <<"get_new_messages">> -> get_new_messages(Args);
+        <<"image">>            -> image(Args);
+        <<"save_image">>       -> save_image(Args)
     end.
 
 %%%===================================================================
@@ -283,12 +284,40 @@ get_messages([ParamList, _Req, State, _SessionKey]) ->
              end,
 
     Reply = case hs_team:get_messages(TeamId, Offset, Count) of
-                {error, not_found} ->
-                    {[{<<"error">>, <<"not_found">>}]};
+                {error, not_found} -> {[{<<"error">>, <<"not_found">>}]};
                 {ok, MessageList} ->
                     lists:map(fun(Msg) -> hs_message:to_tuple(Msg) end,
                               MessageList)
             end,
+    hs_util:ok(jiffy:encode(Reply), State).
+
+get_new_messages([ParamList, _Req, State, _SessionKey]) ->
+    TeamId = proplists:get_value(<<"team_id">>, ParamList),
+    SinceIdBin = proplists:get_value(<<"since_id">>, ParamList),
+    SinceId = list_to_integer(binary_to_list(SinceIdBin)),
+
+    LatestMsg = hs_team:get_latest_message(TeamId),
+
+    Reply = case LatestMsg of
+                undefined -> {[]};
+                _ ->
+                    case LatestMsg#message.id of
+                        SinceId -> {[]};
+                        _ ->
+                            Messages = hs_team:get_messages_by_since_id(TeamId,
+                                                                    SinceIdBin),
+                            case Messages of
+                                {error, not_found} -> 
+                                    {[{<<"error">>, <<"not_found">>}]};
+                                {ok, MessageList} ->
+                                    lists:map(fun(Msg) -> 
+                                                      hs_message:to_tuple(Msg) 
+                                              end,
+                                              MessageList)
+                            end
+                    end
+            end,
+
     hs_util:ok(jiffy:encode(Reply), State).
 
 image([ParamList, _Req, State, _SessionKey]) ->

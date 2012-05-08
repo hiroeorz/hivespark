@@ -19,7 +19,8 @@
          checkin_members/1, checkin/3, checkout/3, to_tuple/1, 
          is_member/2, is_owner/2,
          add_message/1, get_messages/3, get_members/1, get_articles/4,
-         add_article/1, statuses_list/2, get_messages_by_since_id/2]).
+         add_article/1, statuses_list/2, get_messages_by_since_id/2,
+         get_latest_message/1]).
 
 -export([start_child/1, start_link/1]).
 
@@ -295,13 +296,41 @@ get_messages(TeamId, Offset, Count) when is_integer(TeamId) ->
       TeamId :: integer() | binary(),
       SinceId:: binary(),
       MessageList :: [#message{}] | [].
-get_messages_by_since_id(TeamId, SinceId) when is_binary(SinceId) ->
+get_messages_by_since_id(TeamId, SinceId) when is_binary(TeamId) and
+                                               is_binary(SinceId) ->
+    get_messages_by_since_id(list_to_integer(binary_to_list(TeamId)), SinceId);
+
+get_messages_by_since_id(TeamId, SinceId) when is_integer(TeamId) and
+                                               is_binary(SinceId) ->
     case get_message_ids_since(TeamId, SinceId) of
         {ok, []} ->
-            spawn(fun() -> load_messages_to_cache(TeamId) end),
-            hs_message_db:list_of_team_by_since_id(TeamId, SinceId);
+            SinceIdInt = list_to_integer(binary_to_list(SinceId)),
+            hs_message_db:list_of_team_by_since_id(TeamId, SinceIdInt);
         {ok, Ids} -> {ok, hs_message:mget_msg(Ids)}
     end.
+
+%%--------------------------------------------------------------------
+%% @doc get latest message.
+%% @end
+%%--------------------------------------------------------------------
+-spec get_latest_message(TeamId) -> {ok, Message} | {error, not_found} when
+      TeamId :: binary() | integer(),
+      Message :: #message{}.
+get_latest_message(TeamId) when is_binary(TeamId) ->
+    get_latest_message(list_to_integer(binary_to_list(TeamId)));
+
+get_latest_message(TeamId) when is_integer(TeamId) ->
+    Key = get_key_of_timeline(TeamId),
+
+    case eredis_pool:q(?DB_SRV, ["LRANGE", Key, -1, -1]) of
+        {ok, []} ->
+            hs_message_db:get_latest_of_team(TeamId);
+        {ok, [MsgId]} -> 
+            case hs_message:get_msg(MsgId) of
+                {ok, Msg} -> Msg;
+                {error, not_found} -> undefined
+            end
+    end.             
 
 %%--------------------------------------------------------------------
 %% @doc get team list of given status.
@@ -491,7 +520,7 @@ get_key_of_timeline(TeamId) ->
       MsgId :: integer().
 add_message_id(TeamId, MsgId) when is_integer(TeamId), is_integer(MsgId) ->
     Key = get_key_of_timeline(TeamId),
-    {ok, _} = eredis_pool:q(?DB_SRV, ["LPUSH", Key, MsgId]),
+    {ok, _} = eredis_pool:q(?DB_SRV, ["RPUSH", Key, MsgId]),
     ok.
 
 -spec get_message_ids(TeamId, Offset, Count) -> 
@@ -501,11 +530,16 @@ add_message_id(TeamId, MsgId) when is_integer(TeamId), is_integer(MsgId) ->
       Count :: integer(),
       MsgIdList :: [binary()].
 get_message_ids(TeamId, Offset, Count) ->
-    StartPos = 0 - Offset - 1,
-    EndPos = 0 - Count,
+    StartPos = 0 - Offset,
+
+    EndPos = StartPos + Count,
+    EndPos1 = if EndPos > -1 -> -1;
+                 true -> EndPos
+              end,
+
     Key = get_key_of_timeline(TeamId),
 
-    case eredis_pool:q(?DB_SRV, ["LRANGE", Key, EndPos, StartPos]) of
+    case eredis_pool:q(?DB_SRV, ["LRANGE", Key, StartPos, EndPos1]) of
         {ok, undefined} -> {error, not_found};
         {ok, MsgIdList} -> {ok, MsgIdList}
     end.
@@ -516,19 +550,20 @@ get_message_ids(TeamId, Offset, Count) ->
       SinceId :: binary(),
       MsgIdList :: [binary()].
 get_message_ids_since(TeamId, SinceId) when is_binary(SinceId) ->
-    get_message_ids_since(TeamId, SinceId, -1, -10, []).
+    get_message_ids_since(TeamId, SinceId, -10, -1, []).
 
 get_message_ids_since(TeamId, SinceId, StartPos, EndPos, Results) ->
     Key = get_key_of_timeline(TeamId),
-    case eredis_pool:q(?DB_SRV, ["LRANGE", Key, EndPos, StartPos]) of
+    case eredis_pool:q(?DB_SRV, ["LRANGE", Key, StartPos, EndPos]) of
         {ok, undefined} -> {error, not_found};
         {ok, []} -> {ok, lists:flatten([Results])};
         {ok, MsgIdList} ->
-            case message_parts_since(MsgIdList, SinceId, []) of
-                {eof, IdList} -> {ok, lists:flatten([IdList | Results])};
+            case message_parts_since(lists:reverse(MsgIdList), SinceId, []) of
+                {eof, IdList} -> 
+                    {ok, lists:reverse(lists:flatten([IdList | Results]))};
                 {next, IdList} -> 
                    get_message_ids_since(TeamId, SinceId, 
-                                         EndPos - 1, EndPos - 10, 
+                                         StartPos - 10, EndPos - 10, 
                                          [IdList | Results])
             end
     end.        
@@ -545,10 +580,18 @@ message_parts_since([Id | Tail], SinceId, ResultList) ->
       TeamId :: integer() | binary().
 load_messages_to_cache(TeamId) ->
     io:format("loading team's messages (team_id=~p)~n", [TeamId]),
-    {ok, Messages} = hs_message_db:list_of_team(TeamId, 0, 3000),
+
+    {ok, Messages} = hs_message_db:list_of_team(TeamId, 0, 1000),
+
+
+    Key = get_key_of_timeline(TeamId),
+    eredis_pool:q(?DB_SRV, ["DEL", Key]),
+
     lists:map(fun(M) ->
                       hs_message_cache:save(M),
                       add_message_id(TeamId, M#message.id)
-              end, Messages),
+              end, 
+              lists:reverse(Messages)),
+
     io:format("team's messages loaded (team_id=~p).~n", [TeamId]),
     ok.

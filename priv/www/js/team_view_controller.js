@@ -648,25 +648,62 @@ HS.TeamViewController.prototype = (function () {
 				      add_new_message);
 
 	$("#message-refresh_button").bind("click", function() { 
-	    get_messages(params.team_id);
+	    get_new_messages(params.team_id);
 	});
     };
+
+    var last_message_id = 0;
+    var new_message_color = "#fff0f5"
 
     /**
      * 表示しているチームのメッセージを取得して表示します
      *
      * @method get_messages
      */
-    var last_mesage_id = 0;
+    var set_messages_to_timeline = function(messages, color) {
+	if (color == undefined) { color = "#fff"; }
+
+	for (var i in messages) {
+	    var message = messages[i];
+	    var message_li = create_message_view(message);
+	    $("ul#timeline").prepend(message_li);
+	    $(message_li).css("background-color", color);
+	    last_message_id = message.id;
+	}
+    };
+
     var get_messages = function(team_id) {
 	$("ul#timeline").empty();
 	$.getJSON("/team/get_messages?team_id=" + team_id,
 		  function(messages) {
-		      for (var i in messages) {
-			  var message = messages[i];
-			  var message_li = create_message_view(message);
-			  $("ul#timeline").append(message_li);
+		      set_messages_to_timeline(messages);
+		  });
+    };
+
+    var get_new_messages = function(team_id, fun) {
+	$.getJSON("/team/get_new_messages?team_id=" + team_id + 
+		  "&since_id=" + last_message_id,
+		  function(messages) {
+		      if (messages.length > 0) {
+			  $("ul#timeline li").css("background-color", "#fff");
 		      }
+
+		      $("ul#timeline li").css("background-color", "#fff");
+		      set_messages_to_timeline(messages, new_message_color);
+		  });
+    };
+
+    var start_get_message_interval = function(team_id, interval) {
+	$.getJSON("/team/get_new_messages?team_id=" + team_id + 
+		  "&since_id=" + last_message_id,
+		  function(messages) {
+		      if (messages.length > 0) {
+			  $("ul#timeline li").css("background-color", "#fff");
+			  set_messages_to_timeline(messages, new_message_color);
+		      }
+		      setTimeout(function() {
+			  start_get_message_interval(team_id, interval);
+		      }, interval);
 		  });
     };
 
@@ -715,6 +752,10 @@ HS.TeamViewController.prototype = (function () {
 	return li;
     };
 
+    /* 新規メッセージを確認するインターバル */
+    var check_new_message_interval = 1000 * 3;	
+    //var check_new_message_interval = 60000 * 3;	
+
     /* public */
     return {
 	/**
@@ -724,7 +765,7 @@ HS.TeamViewController.prototype = (function () {
 	 */
 	init: function () {
 	},
-	
+
 	/**
 	 * 画面表示直後に呼ばれる
 	 *
@@ -740,6 +781,11 @@ HS.TeamViewController.prototype = (function () {
 	    get_team_info(params.team_id);
 	    get_articles(params.team_id);
 	    get_messages(params.team_id);
+
+	    setTimeout(function() { 
+		start_get_message_interval(params.team_id, 
+					   check_new_message_interval);
+	    }, check_new_message_interval);
 	}
 
     };

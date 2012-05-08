@@ -14,7 +14,8 @@
 
 %% API
 -export([q/1, q/2, insert/1, get_msg/1, list_of_team/3, 
-         list_of_team_by_since_id/2, list_of_usr/2]).
+         list_of_team_by_since_id/2, list_of_usr/2,
+         get_latest_of_team/1]).
 
 -export([parse_result/3]).
 
@@ -134,6 +135,29 @@ list_of_usr(UsrId, Count) when is_integer(UsrId) and
     q("select * from messages where usr_id = $1
          order by id desc
          limit $2", [UsrId, Count]).
+
+%%--------------------------------------------------------------------
+%% @doc
+%% チームに投稿された最後のメッセージを返す。
+%% @end
+%%--------------------------------------------------------------------
+-spec get_latest_of_team(TeamId) -> Message when
+      TeamId :: integer() | binary(),
+      Message :: #message{} | undefined.
+get_latest_of_team(TeamId) when is_binary(TeamId) ->
+    get_latest_of_team(list_to_integer(binary_to_list(TeamId)));
+
+get_latest_of_team(TeamId) when is_integer(TeamId) ->
+    Result =  q("select * from messages where team_id = $1
+                   order by id desc
+                   limit 1", 
+                [TeamId]),
+    case Result of
+        {ok, []} -> undefined;
+        {ok, [Message]} -> Message
+    end.
+            
+
 
 %%--------------------------------------------------------------------
 %% @doc sql query result parser.
