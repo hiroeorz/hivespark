@@ -88,6 +88,7 @@ upload_icon([_ParamList, _Req, State, _SessionKey]) ->
 info([ParamList, _Req, State, SessionKey]) ->
     Usr = hs_session:get_usr(SessionKey),
     TeamId = proplists:get_value(<<"team_id">>, ParamList),
+
     case hs_team:lookup_id(TeamId) of
         {ok, Team} -> 
             Reply = {[{team, hs_team:to_tuple(Team)},
@@ -137,7 +138,6 @@ update([ParamList, _Req, State, SessionKey]) ->
 
     StatusBin = proplists:get_value(<<"status">>, ParamList),
     Status = list_to_integer(binary_to_list(StatusBin)),
-    ?debugVal(Status),
 
     Format = proplists:get_value(<<"format">>, ParamList),
 

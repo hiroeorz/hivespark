@@ -20,7 +20,8 @@
          is_member/2, is_owner/2,
          add_message/1, get_messages/3, get_members/1, get_articles/4,
          add_article/1, statuses_list/2, get_messages_by_since_id/2,
-         get_latest_message/1]).
+         get_latest_message/1, 
+         get_pid/1]).
 
 -export([start_child/1, start_link/1]).
 
@@ -381,19 +382,44 @@ get_members(TeamId) when is_integer(TeamId) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec start_child(TeamId) -> {ok, Pid} | {error, Reason} when
-      TeamId :: integer(),
+      TeamId :: binary() | integer(),
       Pid :: pid(),
       Reason :: atom().
-start_child(TeamId) ->
+start_child(TeamId) when is_binary(TeamId) ->
+    start_child(list_to_integer(binary_to_list(TeamId)));
+
+start_child(TeamId) when is_integer(TeamId) ->
     case lookup_id(TeamId) of
         {error, Reason} -> {error, Reason};
         {ok, _Team} -> 
-            {ok, _Pid} = supervisor:start_child(hs_team_sup,
-                                               {hs_team_sup, 
-                                                {hs_team, start_link, [TeamId]},
-                                                permanent, 5000, worker, 
-                                                [hs_team_sup, hs_team]})
+            ChildId = get_child_name(TeamId),
+            ChildSpec = {ChildId, {hs_team, start_link, [TeamId]},
+                         permanent, 5000, worker, 
+                         [hs_team_sup, hs_team]},
+
+            case supervisor:start_child(hs_team_sup, ChildSpec) of
+                {error,{already_started, Pid}} -> 
+                    true = ets:insert(hs_team_pid, {TeamId, Pid}),
+                    ok;
+                {ok, Pid} -> 
+                    true = ets:insert(hs_team_pid, {TeamId, Pid}),
+                    ok
+            end
     end.
+
+-spec get_pid(TeamId) -> {ok, pid()} | {error, not_found} when
+      TeamId :: integer().
+get_pid(TeamId) when is_integer(TeamId) ->
+    case ets:lookup(hs_team_pid, TeamId) of
+        [] -> {error, not_found};
+        [{_, Pid}] -> {ok, Pid}
+    end.
+
+-spec get_child_name(TeamId) -> ChildId when
+      TeamId :: integer(),
+      ChildId :: string().
+get_child_name(TeamId) when is_integer(TeamId) ->
+    "hs_team_" ++ integer_to_list(TeamId).
 
 %%--------------------------------------------------------------------
 %% @doc
