@@ -618,6 +618,11 @@ HS.TeamViewController.prototype = (function () {
 	       })
     };
 
+    /**
+     * 新しいメッセージを投稿する
+     *
+     * @method add_new_message
+     */
     var add_new_message = function(event) {
 	var team_id = event.data.team_id;
 	var text = $("#new-message-text").val();
@@ -625,13 +630,8 @@ HS.TeamViewController.prototype = (function () {
 	       {team_id:team_id, text:text},
 	       function(data) {
 		   var json = JSON.parse(data);
-		   if (json.result == true) {
-		       var message_view = create_message_view(json.message)
-		       $("ul#timeline").prepend(message_view);
-		       $("#new-message-text").val("");
-		   } else {
-		       alert("送信に失敗しました");
-		   }
+		   if (json.result != true) { alert("送信に失敗しました"); }
+		   get_new_messages(team_id);
 	       })
     };
 
@@ -754,7 +754,7 @@ HS.TeamViewController.prototype = (function () {
 
     /* 新規メッセージを確認するインターバル */
     //var check_new_message_interval = 1000 * 3;	
-    var check_new_message_interval = 60000 * 3;	
+    var check_new_message_interval = 60000 * 1;	
 
     /* public */
     return {
