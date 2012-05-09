@@ -10,7 +10,9 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-    hivespark_sup:start_link().
+    {ok, Pid} = hivespark_sup:start_link(),
+    unlink(Pid),
+    {ok, Pid}.
 
 stop(_State) ->
     ok.
