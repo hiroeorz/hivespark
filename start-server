@@ -1,3 +1,3 @@
 #!/bin/sh
 
-erl -pa ebin deps/*/ebin -boot start_sasl -name hivespark@127.0.0.1 -setcookie hivespark -s hivespark start
+erl -pa ebin deps/*/ebin -boot start_sasl -config elog -name hivespark@127.0.0.1 -setcookie hivespark -s hivespark start
