@@ -1,0 +1,3 @@
+#!/bin/sh
+
+erl -pa ebin deps/*/ebin -noinput -noshell -detached -boot start_sasl -config elog -name hivespark@127.0.0.1 -setcookie hivespark -s hivespark start
