@@ -17,11 +17,13 @@ element {
 <script type="text/javascript" src="/shared/js/highslide-4.1.13/highslide/highslide-full.js"></script>
 <script type="text/javascript" src="/shared/js/hs_util.js"></script>
 <script type="text/javascript" src="/shared/js/team_view_controller.js"></script>
+<script type="text/javascript" src="/shared/js/hs_notification.js"></script>
 
 <script type="text/javascript">
 //<![CDATA[
   window.onload = function() {
     new HS.TeamViewController().view_did_load();
+    new HS.Notification().start();
   }
   
     hs.graphicsDir = '/shared/js/highslide-4.1.13/highslide/graphics/';

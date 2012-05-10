@@ -14,11 +14,14 @@
 
 %% API
 -export([list/1, store/1, lookup_id/1, lookup_name/1, delete/1, 
-         add_team_id_list/2, get_team_id_list/1, delete_team_id_list/1]).
+         add_team_id_list/2, get_team_id_list/1, delete_team_id_list/1,
+         add_worker_pid/2, delete_worker_pid/2, get_worker_pids/1,
+         clear_all_worker_pid/0]).
 
 -define(USR_DB, <<"usr_cache">>).
 -define(USR_NAME_INDEX_KEY, <<"usr_name_index">>).
 -define(USRS_TEAMS_KEY, <<"usrs_teams">>).
+-define(USR_PID_KEY, <<"usr_pid_list">>).
 
 -define(KEY_PHRASE_1, "message_box3").
 -define(KEY_PHRASE_2, "SHIMANE").
@@ -168,6 +171,67 @@ get_team_id_list(UsrId) when is_binary(UsrId) ->
 delete_team_id_list(UsrId) ->
     {ok, _} = eredis_pool:q(?DB_SRV, ["HDEL", ?USRS_TEAMS_KEY, UsrId]),
     ok.
+
+%%--------------------------------------------------------------------
+%% @doc 
+%% add usr's websocket worker pid.
+%% @end
+%%--------------------------------------------------------------------
+-spec add_worker_pid(UsrId, Pid) -> ok when
+      UsrId :: integer(),
+      Pid :: pid().
+add_worker_pid(UsrId, Pid) when is_integer(UsrId) and is_pid(Pid) ->
+    PidList = get_worker_pids(UsrId),
+
+    case lists:any(fun(A) -> A == Pid end, PidList) of
+        true -> ok;
+        false ->
+            PidListBin = term_to_binary([Pid | PidList]),
+            {ok, _} = eredis_pool:q(?DB_SRV, ["HSET", ?USR_PID_KEY, 
+                                              UsrId, PidListBin])
+    end,
+
+    ok.
+
+%%--------------------------------------------------------------------
+%% @doc 
+%% delete usr's websocket worker pid.
+%% @end
+%%--------------------------------------------------------------------
+-spec delete_worker_pid(UsrId, Pid) -> ok when
+      UsrId :: integer(),
+      Pid :: pid().
+delete_worker_pid(UsrId, Pid) when is_integer(UsrId) and is_pid(Pid) ->
+    IdList = get_worker_pids(UsrId),
+    NewIdListBin = term_to_binary(lists:delete(Pid, IdList)),
+
+    {ok, _} = eredis_pool:q(?DB_SRV, ["HSET", ?USR_PID_KEY, 
+                                      UsrId, NewIdListBin]),
+    ok.
+
+%%--------------------------------------------------------------------
+%% @doc 
+%% clear all websocket worker pid.
+%% @end
+%%--------------------------------------------------------------------
+-spec clear_all_worker_pid() -> ok.
+clear_all_worker_pid() ->
+    {ok, _} = eredis_pool:q(?DB_SRV, ["DEL", ?USR_PID_KEY]),
+    ok.
+
+%%--------------------------------------------------------------------
+%% @doc 
+%% get usr's websocket workers.
+%% @end
+%%--------------------------------------------------------------------
+-spec get_worker_pids(UsrId) -> [pid()] | [] when
+      UsrId :: integer().
+get_worker_pids(UsrId) ->
+    case eredis_pool:q(?DB_SRV, ["HGET", ?USR_PID_KEY, 
+                                 list_to_binary(integer_to_list(UsrId))]) of
+        {ok, undefined} -> [];
+        {ok, PidListBin} -> binary_to_term(PidListBin)
+    end.
 
 %%%===================================================================
 %%% Internal functions

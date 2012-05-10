@@ -14,6 +14,10 @@ HS.TeamViewController.prototype = (function () {
 
     /* private */
 
+    var socket_init = function() {
+	
+    };
+
     /**
      * ユーザーの情報を取得してHTML上に配置します
      *

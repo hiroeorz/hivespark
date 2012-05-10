@@ -24,6 +24,7 @@ start() ->
     application:start(eredis_pool),
     application:start(cowboy),
     application:start(hivespark),
+    hs_usr_cache:clear_all_worker_pid(),
     {ok, Port} = application:get_env(hivespark, port),
     {ok, ListenerCount} = application:get_env(hivespark, listener_count),
     start_http_listener(Port, ListenerCount).
@@ -48,7 +49,7 @@ start_http_listener(Port, ListenerCount) when is_integer(Port) and
 
     Dispatch = 
         [{'_',[SharedDispatch,
-               {[<<"websocket">>], hs_websocket_handler, []},
+               {[<<"websock">>, <<"notification">>], notification_handler, []},
 
                {[<<"rest">>, <<"team">>, '...'], 
                 team_rest_handler, [require_login]},

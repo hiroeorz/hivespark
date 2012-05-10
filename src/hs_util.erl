@@ -22,7 +22,8 @@
          priv_dir/0, ext_part/1, ext_type/1, 
          get_multi_data/1, get_param_data/1, acc_multipart/2,
          create_datetime_string/1, pgdaatetime_to_seconds/1,
-         get_request_params/1, reply/4, reply/2, create_args/2]).
+         get_request_params/1, reply/4, reply/2, create_args/2,
+         notification_my_teams_usrs/2]).
 
 -define(MultiPartDataPattern, [{<<"Content-Disposition">>, <<"form-data; name=\"fileName\"; filename=", _N/binary>>}, {'Content-Type', Type}]).
 
@@ -318,6 +319,26 @@ create_args(Req, State) ->
     ParamList = hs_util:get_request_params(Req),
     SessionKey = hs_session:get_session_key_with_req(Req),
     [ParamList, Req, State, SessionKey].
+
+%%--------------------------------------------------------------------
+%% @doc
+%% 与えられたユーザの所属する全チームの全ユーザにリアルタイムメッセージを送る
+%% @end
+%%--------------------------------------------------------------------
+-spec notification_my_teams_usrs(UsrId, Msg) -> pid() when
+      UsrId :: integer(),
+      Msg :: tuple().
+notification_my_teams_usrs(UsrId, Msg) when is_integer(UsrId) and
+                                            is_tuple(Msg) -> 
+    WebSocks = hs_usr:get_same_teams_usrs_pids(UsrId), ?debugVal(WebSocks),
+    Fun = fun() ->
+                  lists:map(fun(Pid) ->
+                                    M = jiffy:encode(Msg),
+                                    Pid ! {notification, self(), M}
+                            end, WebSocks)
+          end,
+
+    spawn(Fun).
 
 %%%===================================================================
 %%% Internal functions

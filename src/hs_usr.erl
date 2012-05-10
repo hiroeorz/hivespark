@@ -17,7 +17,7 @@
          authenticate/2, 
          get_teams/1, add_team/2, delete_team/2, 
          to_tuple/1, add_message/2, get_messages/2, get_messages/3,
-         checkin_to_team/2, get_checkin_team/1]).
+         checkin_to_team/2, get_checkin_team/1, get_same_teams_usrs_pids/1]).
 
 -define(USR_TIMELINE, <<"_hut_">>).
 -define(USR_CHECKIN_TEAM, <<"hs_usr_checkin_team">>).
@@ -175,7 +175,41 @@ get_checkin_team(UsrId) ->
                 {ok, Team} -> {ok, Team}
             end
     end.
-                    
+
+%%--------------------------------------------------------------------
+%% @doc
+%% 同じチームに属するユーザのwebsocket handlerプロセスのプロセス識別子のリストを返す
+%% @end
+%%--------------------------------------------------------------------
+-spec get_same_teams_usrs_pids(UsrId) -> UsrList when
+      UsrId :: binary() | integer(),
+      UsrList :: [#usr{}] | [].
+get_same_teams_usrs_pids(UsrId) when is_binary(UsrId) or is_integer(UsrId) ->
+    {ok, TeamList} = hs_usr:get_teams(UsrId),
+    UsrList = get_teams_usrs(TeamList),
+
+    lists:foldl(fun(U, Result) -> 
+                        Result ++ hs_usr_cache:get_worker_pids(U#usr.id)
+                end, [], UsrList).
+    
+        
+%%--------------------------------------------------------------------
+%% @doc
+%% 渡されたチームリストに属する全ユーザのwebsocket handlerプロセスの
+%% プロセス識別子リストを返す(プロセス識別子はユニークにして返す)
+%% @end
+%%--------------------------------------------------------------------
+-spec get_teams_usrs(TeamList) -> PidList when
+      TeamList :: [#team{}] | [],
+      PidList :: [pid()] | [].
+get_teams_usrs([]) -> [];
+get_teams_usrs(TeamList) -> get_teams_usrs(TeamList, []).
+
+get_teams_usrs([], Result) -> lists:usort(lists:merge(Result));
+get_teams_usrs([Team | Tail], Result) ->
+    {ok, UsrList} = hs_team:get_members(Team#team.id),
+    get_teams_usrs(Tail, [UsrList | Result]).
+                
 %%--------------------------------------------------------------------
 %% @doc parse usr for json object.
 %% @end
