@@ -21,7 +21,7 @@
          add_message/1, get_messages/3, get_members/1, get_articles/4,
          add_article/1, statuses_list/2, get_messages_by_since_id/2,
          get_latest_message/1, 
-         get_pid/1]).
+         get_pid/1, get_members_pids/1]).
 
 -export([start_child/1, start_link/1]).
 
@@ -363,7 +363,8 @@ get_articles(TeamId, Offset, Count, Status) when is_integer(TeamId) ->
     hs_article_db:list_of_team(TeamId, Offset, Count, Status).
 
 %%--------------------------------------------------------------------
-%% @doc add message to users timeline.
+%% @doc
+%% add message to users timeline.
 %% @end
 %%--------------------------------------------------------------------
 -spec get_members(TeamId) -> {ok, UsrList} | {error, Reason} when
@@ -375,6 +376,22 @@ get_members(TeamId) when is_binary(TeamId) ->
 
 get_members(TeamId) when is_integer(TeamId) ->
     hs_usr_team_db:get_teams_usrs(TeamId).
+
+%%--------------------------------------------------------------------
+%% @doc
+%% get team members websocket pid list.
+%% @end
+%%--------------------------------------------------------------------
+-spec get_members_pids(TeamId) -> PidList when
+      TeamId :: integer(),
+      PidList :: [pid()] | [].
+get_members_pids(TeamId) ->
+    {ok, Usrs} = get_members(TeamId),
+    Pids = lists:foldl(fun(U, R) ->
+                               Pids = hs_usr_cache:get_worker_pids(U#usr.id),
+                               R ++ Pids
+                       end, [], Usrs),
+    lists:usort(Pids).
 
 %%--------------------------------------------------------------------
 %% @doc

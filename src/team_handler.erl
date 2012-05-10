@@ -264,9 +264,9 @@ send_message([ParamList, _Req, State, SessionKey]) ->
     Reply = case hs_team:add_message(Msg) of
                 {ok, Message} ->
                     TMsg = hs_message:to_tuple(Message),
-                    hs_util:notification_my_teams_usrs(Usr#usr.id, 
-                                                       {[{message, TMsg},
-                                                         {type, message}]}),
+                    hs_util:notification_teams_usrs(TeamId, 
+                                                    {[{message, TMsg},
+                                                      {type, message}]}),
                     {[{<<"result">>, true}, {message, TMsg}]};
                 {error, Reason} ->
                     ?debugVal(Reason),

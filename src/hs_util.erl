@@ -23,7 +23,7 @@
          get_multi_data/1, get_param_data/1, acc_multipart/2,
          create_datetime_string/1, pgdaatetime_to_seconds/1,
          get_request_params/1, reply/4, reply/2, create_args/2,
-         notification_my_teams_usrs/2]).
+         notification_teams_usrs/2]).
 
 -define(MultiPartDataPattern, [{<<"Content-Disposition">>, <<"form-data; name=\"fileName\"; filename=", _N/binary>>}, {'Content-Type', Type}]).
 
@@ -322,15 +322,19 @@ create_args(Req, State) ->
 
 %%--------------------------------------------------------------------
 %% @doc
-%% 与えられたユーザの所属する全チームの全ユーザにリアルタイムメッセージを送る
+%% チームの全ユーザにリアルタイムメッセージを送る
 %% @end
 %%--------------------------------------------------------------------
--spec notification_my_teams_usrs(UsrId, Msg) -> pid() when
-      UsrId :: integer(),
+-spec notification_teams_usrs(TeamId, Msg) -> pid() when
+      TeamId :: integer() | binary(),
       Msg :: tuple().
-notification_my_teams_usrs(UsrId, Msg) when is_integer(UsrId) and
-                                            is_tuple(Msg) -> 
-    WebSocks = hs_usr:get_same_teams_usrs_pids(UsrId), ?debugVal(WebSocks),
+notification_teams_usrs(TeamId, Msg) when is_binary(TeamId) and
+                                          is_tuple(Msg) -> 
+    notification_teams_usrs(list_to_integer(binary_to_list(TeamId)), Msg);
+
+notification_teams_usrs(TeamId, Msg) when is_integer(TeamId) and
+                                          is_tuple(Msg) -> 
+    WebSocks = hs_team:get_members_pids(TeamId), ?debugVal(WebSocks),
     Fun = fun() ->
                   lists:map(fun(Pid) ->
                                     M = jiffy:encode(Msg),
