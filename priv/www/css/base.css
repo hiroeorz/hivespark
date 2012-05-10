@@ -801,10 +801,10 @@ div#contents div#timeline_area a.mentions { top:100px; }
 div#contents div#timeline_area a.mytweet { top:150px; } 
 
 /* ======== NOTIFICATION ========= */
-div#contents div.notification-message {
+div#header div.notification-message {
    position:absolute;
    top:0;
-   left:560px;
+   left:464px;
    display:none;
    width: 329px;
    height: 53px;
@@ -814,18 +814,18 @@ div#contents div.notification-message {
    border-bottom:1px solid #bababa;
    border-right:1px solid #bababa;
    margin-left:5px;
-   /*background-color: #fff0f5;*/
    background-color: #afffd4;
+   text-decoration: none;
 }
 
-div#contents div.notification-message img {
+div#header div.notification-message img {
   display:inline;
   float:left;
   width: 38px;
   height: 38px;
 }
 
-div#contents div.notification-message h3 {
+div#header div.notification-message h3 {
   display:inline;
   width: auto;
   margin:0;
@@ -834,16 +834,17 @@ div#contents div.notification-message h3 {
   font-size:0.8em;
 }
 
-div#contents div.notification-message p {
+div#header div.notification-message p {
   display:block;
   color: #222;
   margin:0;
   margin-left: 47px;
   padding:0;
   width: 255px;
+  border-bottom: 0;
 }
 
-div#contents div.notification-message p.tweet_time {
+div#header div.notification-message p.tweet_time {
   display:inline;
   color: #999999;
   margin:0;

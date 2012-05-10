@@ -59,7 +59,7 @@ HS.Notification.prototype = (function () {
     var handle_message = function(msg) {
 	var view = create_notification_view(msg.message);
 	$("div.notification-message").remove();
-	$("div#contents").append(view);
+	$("div#header").append(view);
 	$(view).fadeIn("normal");
 
 	setTimeout(function() {
