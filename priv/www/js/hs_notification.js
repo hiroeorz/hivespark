@@ -18,7 +18,7 @@ HS.Notification.prototype = (function () {
     var websock = undefined;
     var not_support_msg = "残念!! あなたのブラウザではプッシュ通知サービスはサポートされません!";
     var websock_shoutdown_msg = "(;･ิω･ิ)サーバとの通信が途切れました";
-    var uri = "ws://localhost:8080/websock/notification"
+    var uri = "ws://" + location.host + "/websock/notification";
 
     var open_connection = function() {
 	var self = this;
