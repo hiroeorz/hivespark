@@ -15,11 +15,13 @@ element {
 <script type="text/javascript" src="/shared/js/jquery.js"></script>
 <script type="text/javascript" src="/shared/js/hs_util.js"></script>
 <script type="text/javascript" src="/shared/js/team_list_view_controller.js"></script>
+<script type="text/javascript" src="/shared/js/hs_notification.js"></script>
 
 <script type="text/javascript">
 //<![CDATA[
   window.onload = function() {
     new HS.TeamListViewController().view_did_load();
+    new HS.Notification().start();
   }
 //]]>
 </script>
