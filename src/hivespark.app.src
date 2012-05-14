@@ -2,12 +2,17 @@
  [
   {description, ""},
   {vsn, "0.1"},
+  {modules, [
+  	    hivespark_app,
+	    hivespark_sup,
+	    hivespark
+  ]},
   {registered, []},
   {applications, [
                   kernel,
                   stdlib
                  ]},
-  {mod, { hivespark_app, []}},
+  {mod, {hivespark_app, []}},
   {env, [
     {listener_count, 100},
     {port, 8080}

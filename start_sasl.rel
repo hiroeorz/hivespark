@@ -16,4 +16,5 @@
   {xmerl, "1.3.1"},
   {compiler, "4.8.1"},
   {syntax_tools, "1.6.8"},
+  {eredis_pool, "1.6.8"},
   {postgres_pool, "1.0"}]}.
