@@ -27,7 +27,7 @@ start_http_listener(Port, ListenerCount) when is_integer(Port) and
 
     SharedDispatch = {[<<"shared">>, '...'], cowboy_http_static,
                       [
-                       {directory, <<"./priv/www">>},
+                       {directory, list_to_binary(hs_util:priv_dir() ++ "/www")},
                        {mimetypes, [
                                     {<<".html">>, [<<"text/html">>]},
                                     {<<".css">>, [<<"text/css">>]},
