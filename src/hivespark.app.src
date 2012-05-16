@@ -10,7 +10,11 @@
   {registered, []},
   {applications, [
                   kernel,
-                  stdlib
+                  stdlib,
+		  sasl,
+         	  postgres_pool,
+         	  eredis_pool,
+         	  cowboy
                  ]},
   {mod, {hivespark_app, []}},
   {env, [
