@@ -1,7 +1,7 @@
 {application, hivespark,
  [
   {description, ""},
-  {vsn, "0.1"},
+  {vsn, "0.2"},
   {modules, [
   	    hivespark_app,
 	    hivespark_sup,

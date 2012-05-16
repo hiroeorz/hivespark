@@ -334,7 +334,7 @@ notification_teams_usrs(TeamId, Msg) when is_binary(TeamId) and
 
 notification_teams_usrs(TeamId, Msg) when is_integer(TeamId) and
                                           is_tuple(Msg) -> 
-    WebSocks = hs_team:get_members_pids(TeamId), ?debugVal(WebSocks),
+    WebSocks = hs_team:get_members_pids(TeamId),
     Fun = fun() ->
                   lists:map(fun(Pid) ->
                                     M = jiffy:encode(Msg),

@@ -1,0 +1,28 @@
+1. change src/hivespark.app.src
+ vsn OldVsn -> NewVsn
+
+2. change rel/reltool.config
+ {rel, "hivespark", OldVsn, -> {rel, "hivespark", NewVsn,
+
+3. rename release package dir if necessary.
+ $ mv hivespark hivespark_0.1
+
+4. generate new release package.
+ $ ./rebar compile
+ $ cd rel
+ $ ../rebar generate
+ $ ../rebar generate-appups previous_release=hivespark_0.1 (OldVsn dirname)
+ $ ../rebar generate-upgrade previous_release=hivespark_0.1 (OldVsn dirname)
+
+5. rename upgrade package
+ $ mv hivespark_0.2.tar.gz hivespark_0.1/releases/
+ $ mv hivespark_0.2.rel hivespark_0.1/releases/
+
+6 upgrade
+ $ ./hivespark/bin/hivespark upgrade hivespark_0.2
+ Unpacked Release "0.2"
+ Installed Release "0.2"
+ Made Release "0.2" Permanent
+
+7. reference
+ https://github.com/basho/rebar/wiki/Upgrades
