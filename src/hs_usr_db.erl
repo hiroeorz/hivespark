@@ -14,7 +14,8 @@
 
 %% API
 -export([q/1, q/2, 
-         list/1, insert/6, lookup_id/1, lookup_name/1, update/1, delete/1, 
+         all/1, list/1, insert/6, lookup_id/1, lookup_name/1, 
+         update/1, delete/1, 
          authenticate/2,
          add_team/2, delete_team/2, get_team_id_list/1]).
 
@@ -51,6 +52,17 @@ q(Sql, Params) ->
             {ok, parse_result(Columns, Values, [])};
         {error, Reason} -> {error, Reason}
     end.           
+
+%%--------------------------------------------------------------------
+%% @doc
+%% 登録が新しい順に指定個数のユーザリストを返す
+%% @end
+%%--------------------------------------------------------------------
+-spec all(Count) -> {ok, UsrList} when
+      Count :: integer(),
+      UsrList :: [#usr{}] | [].
+all(Count) ->
+    q("select * from usrs order by id desc limit $1", [Count]).
 
 %%--------------------------------------------------------------------
 %% @doc get usr list from user id list.

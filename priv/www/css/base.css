@@ -914,3 +914,37 @@ a#new-ticket-link {
     float: right;
     margin-top: -30px;
 }
+
+div#usr-show {
+  margin-left: 340px;
+}
+
+div#usr-show div#usr-description {
+  width: 600px;
+  min-height: 100px;
+  border: 1px solid #bababa;
+  padding: 5px;
+}
+
+div#usr-show div#usr-description img {
+  width: 100px;
+  height: 100px;
+  display: inline;
+  float: left;
+}
+
+div#usr-show div#usr-description b {
+  display: block;
+  float: left;
+  margin-left: 10px;
+}
+
+div#usr-show div#usr-description p {
+  font-size: 0.8em;
+  color: #777;
+  margin-left: 110px;
+}
+
+div#contents div.usr-list ul#timeline li {
+  border-right: 1px solid #bababa;
+}

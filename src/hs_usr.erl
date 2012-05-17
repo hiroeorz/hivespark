@@ -13,7 +13,7 @@
 -include("hivespark.hrl").
 
 %% API
--export([create/6, update/1, delete/1, lookup_id/1, lookup_name/1, 
+-export([all/1, create/6, update/1, delete/1, lookup_id/1, lookup_name/1, 
          authenticate/2, 
          get_teams/1, add_team/2, delete_team/2, 
          to_tuple/1, add_message/2, get_messages/2, get_messages/3,
@@ -25,6 +25,17 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
+
+%%--------------------------------------------------------------------
+%% @doc
+%% 登録が新しい順に指定個数のユーザリストを返す
+%% @end
+%%--------------------------------------------------------------------
+-spec all(Count) -> {ok, UsrList} when
+      Count :: integer() | binary(),
+      UsrList :: [#usr{}] | [].
+all(Count) when is_binary(Count)-> all(list_to_integer(binary_to_list(Count)));
+all(Count) when is_integer(Count)-> hs_usr_db:all(Count).
 
 %%--------------------------------------------------------------------
 %% @doc create new user.

@@ -42,7 +42,9 @@ handle(Req, State) -> hs_router:handle(?MODULE, Req, State).
 
 handle_route(Action, Args) ->
     case Action of
+        <<"index">>       -> index(Args);
         <<"edit">>        -> edit(Args);
+        <<"all">>         -> all(Args);
         <<"upload_icon">> -> upload_icon(Args);
         <<"logout">>      -> logout(Args);
         <<"show_myself">> -> show_myself(Args);
@@ -56,11 +58,19 @@ handle_route(Action, Args) ->
 %%% Request Handle Functions
 %%%===================================================================
 
+index([_ParamList, _Req, State, _SessionKey]) ->
+    hs_util:view("usr_list.html", State).
+
 edit([_ParamList, _Req, State, _SessionKey]) ->
     hs_util:view("usr_edit.html", State).
 
 upload_icon([_ParamList, _Req, State, _SessionKey]) ->
     hs_util:view("usr_upload_icon.html", State).
+
+all([_ParamList, _Req, State, _SessionKey]) ->
+    {ok, UsrList} = hs_usr:all(50), %% とりあえず上限50
+    TUsrList = lists:map(fun(U) -> hs_usr:to_tuple(U) end, UsrList),
+    hs_util:ok(jiffy:encode(TUsrList), State).
 
 logout([ParamList, _Req, State, SessionKey]) ->
     Format = proplists:get_value(<<"format">>, ParamList),
