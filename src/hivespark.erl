@@ -20,6 +20,9 @@
 %%%===================================================================
 
 start() ->
+    application:start(postgres_pool),
+    application:start(eredis_pool),
+    application:start(cowboy),
     application:start(hivespark).
 
 start_http_listener(Port, ListenerCount) when is_integer(Port) and

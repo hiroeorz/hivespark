@@ -4,7 +4,10 @@ ERL=erl
 BEAMDIR=./deps/*/ebin ./ebin
 REBAR=./rebar
 
-all: clean compile xref
+all: clean compile xref generate
+
+generate:
+	cd rel && .$(REBAR) generate
 
 update-deps:
 	@$(REBAR) update-deps

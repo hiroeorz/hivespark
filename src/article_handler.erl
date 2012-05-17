@@ -44,6 +44,7 @@ handle_route(Action, Args) ->
     case Action of
         <<"create">>           -> create(Args);
         <<"update">>           -> update(Args);
+        <<"delete">>           -> delete(Args);
         <<"teams_list">>       -> teams_list(Args);
         <<"status_increment">> -> status_increment(Args);
         <<"status_decrement">> -> status_decrement(Args)
@@ -100,6 +101,25 @@ update([ParamList, _Req, State, SessionKey]) ->
                     {ok, NewArticle1} = hs_article_db:update(NewArticle),
                     TArt = hs_article_db:to_tuple(NewArticle1),
                     Reply = {[{<<"result">>, true}, {article, TArt}]},
+                    hs_util:ok(jiffy:encode(Reply), State)
+            end
+    end.
+
+delete([ParamList, _Req, State, SessionKey]) ->
+    Usr = hs_session:get_usr(SessionKey),
+    ArticleId = proplists:get_value(<<"article_id">>, ParamList),
+
+    {ok, Article} = hs_article_db:lookup_id(ArticleId),
+    TeamId = Article#article.team_id,
+
+    case hs_team:is_member(TeamId, Usr#usr.id) of
+        false -> hs_util:forbidden(State);
+        true ->
+            case hs_article_db:delete(ArticleId) of
+                not_found -> hs_util:not_found(State);
+                ok -> 
+                    Reply = {[{<<"result">>, true}, 
+                              {<<"article_id">>, ArticleId}]},
                     hs_util:ok(jiffy:encode(Reply), State)
             end
     end.

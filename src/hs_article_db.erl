@@ -13,7 +13,7 @@
 -include("hivespark.hrl").
 
 %% API
--export([q/1, q/2, insert/1, lookup_id/1, update/1, 
+-export([q/1, q/2, insert/1, lookup_id/1, update/1, delete/1, 
          list_of_team/4, list_of_usr/2, 
          to_tuple/1]).
 
@@ -100,6 +100,19 @@ update(Article) ->
         {ok, [Record]} -> {ok, Record};
         {ok, []} -> {error, not_found};
         {error, Reason} -> {error, Reason}
+    end.
+
+-spec delete(ArticleId) -> ok | not_found when
+      ArticleId :: integer() | binary().
+delete(ArticleId) when is_binary(ArticleId) ->
+    delete(list_to_integer(binary_to_list(ArticleId)));
+
+delete(ArticleId) when is_integer(ArticleId) ->
+    case lookup_id(ArticleId) of
+        {error, not_found} -> not_found;
+        {ok, _} ->
+            ok = q("delete from articles where id = $1", [ArticleId]),
+            ok
     end.
 
 -spec list_of_team(TeamId, Offset, Count, Status) -> {ok, Articles} | {error, Reason} when

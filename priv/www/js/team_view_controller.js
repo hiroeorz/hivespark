@@ -303,6 +303,15 @@ HS.TeamViewController.prototype = (function () {
 	var title_h3 = document.createElement("h3");
 	var title = document.createTextNode(article.title);
 	title_h3.appendChild(title);
+	var title_a = document.createElement("a");
+	title_a.href = "javascript:void(0)";
+
+	$(title_a).bind("click", function() {
+	    return hs.htmlExpand(this);
+	});
+	title_a.appendChild(title_h3);
+
+	var edit_space = create_article_edit_space(article);
 
 	var text_p = document.createElement("p");
 	var text = document.createTextNode(article.text);
@@ -319,7 +328,8 @@ HS.TeamViewController.prototype = (function () {
 
 	article_li.appendChild(incr_button);
 	article_li.appendChild(usr_img);
-	article_li.appendChild(title_h3);
+	article_li.appendChild(title_a);
+	article_li.appendChild(edit_space);
 	article_li.appendChild(text_p);
 	article_li.appendChild(clear_div);
 
@@ -348,6 +358,24 @@ HS.TeamViewController.prototype = (function () {
 		   var json = JSON.parse(data);
 		   update_progress_callback(json, article);
 	       })
+    };
+
+    /**
+     * チケットを削除します
+     *
+     * @method delte_article
+     */
+    var delete_article = function(event) {
+	var article = event.data.article;
+
+	if (confirm("本当にこのチケットを削除しますか？")) {
+	    $.post("/article/delete", {article_id:article.id},
+		   function(data) {
+		       var json = JSON.parse(data);
+		       var article_id = json.article_id;
+		       $("#article_" + article_id).fadeOut();
+		   })
+	}
     };
 
     /**
@@ -447,6 +475,15 @@ HS.TeamViewController.prototype = (function () {
 			    update_article);
 
 	edit_space.appendChild(save_button);
+
+	var delete_button = document.createElement("input");
+	delete_button.type = "submit";
+	delete_button.value = "削除";
+	$(delete_button).bind("click", 
+			    {article: article},
+			    delete_article);
+
+	edit_space.appendChild(delete_button);
 	
 	return edit_space;
     };
