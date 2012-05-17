@@ -8,8 +8,6 @@
 
 .
 
-
-
 Copyright (c) (C) 2012, Hiroe Shin
 
 __Authors:__ Hiroe Shin ([`shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net`](mailto:shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net)).<a name="index"></a>
@@ -29,15 +27,11 @@ __Authors:__ Hiroe Shin ([`shin@u657207.xgsfmg28.imtp.tachikawa.mopera.net`](mai
 ###start/0##
 
 
-
-
 `start() -> any()`
 
 <a name="start_http_listener-2"></a>
 
 ###start_http_listener/2##
-
-
 
 
 `start_http_listener(Port, ListenerCount) -> any()`

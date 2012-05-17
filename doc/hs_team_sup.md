@@ -8,8 +8,6 @@
 
 .
 
-
-
 Copyright (c) (C) 2012, Hiroe Shin
 
 __Behaviours:__ [`supervisor`](supervisor.md).
@@ -32,12 +30,8 @@ Starts the supervisor.</td></tr></table>
 ###start_link/0##
 
 
-
-
 <pre>start_link() -&gt; {ok, Pid} | ignore | {error, Error}</pre>
 <br></br>
-
-
 
 
 

@@ -8,8 +8,6 @@
 
 .
 
-
-
 Copyright (c) (C) 2012, Hiroe Shin
 
 __Behaviours:__ [`cowboy_http_handler`](cowboy_http_handler.md).
@@ -33,18 +31,12 @@ __Authors:__ Hiroe Shin ([`hiroe.orz@gmail.com`](mailto:hiroe.orz@gmail.com)).<a
 ###handle/2##
 
 
-
-
 `handle(Req, State) -> any()`
-
-
 
 HTTP Handler
 ===================================================================<a name="handle_route-2"></a>
 
 ###handle_route/2##
-
-
 
 
 `handle_route(Action, Args) -> any()`
@@ -54,18 +46,12 @@ HTTP Handler
 ###init/3##
 
 
-
-
 `init(X1, Req, Options) -> any()`
-
-
 
 HTTP CallBacks
 ===================================================================<a name="terminate-2"></a>
 
 ###terminate/2##
-
-
 
 
 `terminate(Req, State) -> any()`

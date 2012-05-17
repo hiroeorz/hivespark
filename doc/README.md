@@ -26,8 +26,7 @@
 <tr><td><a href="hs_usr_cache.md" class="module">hs_usr_cache</a></td></tr>
 <tr><td><a href="hs_usr_db.md" class="module">hs_usr_db</a></td></tr>
 <tr><td><a href="hs_usr_team_db.md" class="module">hs_usr_team_db</a></td></tr>
-<tr><td><a href="hs_util.md" class="module">hs_util</a></td></tr>
-<tr><td><a href="hs_websocket_handler.md" class="module">hs_websocket_handler</a></td></tr>
+<tr><td><a href="notification_handler.md" class="module">notification_handler</a></td></tr>
 <tr><td><a href="team_handler.md" class="module">team_handler</a></td></tr>
 <tr><td><a href="usr_handler.md" class="module">usr_handler</a></td></tr>
 <tr><td><a href="usr_public_handler.md" class="module">usr_public_handler</a></td></tr></table>

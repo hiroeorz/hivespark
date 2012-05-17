@@ -3,5 +3,5 @@
 {modules,[article_handler,auth_handler,hivespark,hivespark_app,hivespark_sup,
           hs_article_db,hs_http_handler,hs_message,hs_message_cache,
           hs_message_db,hs_router,hs_session,hs_team,hs_team_db,hs_team_sup,
-          hs_usr,hs_usr_cache,hs_usr_db,hs_usr_team_db,hs_util,
-          hs_websocket_handler,team_handler,usr_handler,usr_public_handler]}.
+          hs_usr,hs_usr_cache,hs_usr_db,hs_usr_team_db,notification_handler,
+          team_handler,usr_handler,usr_public_handler]}.
