@@ -21,6 +21,7 @@ HS.Notification.prototype = (function () {
     var websock_shoutdown_msg = "(;･ิω･ิ)サーバとの通信が途切れました";
     var reconnect_interval = 5000;
     var keep_alive_interval = 60000;
+    var keep_alive_timer = null;
 
     var open_connection = function(mode) {
 	var self = this;
@@ -35,7 +36,6 @@ HS.Notification.prototype = (function () {
 	    websock.onopen = handle_open;
 	    websock.onmessage = handle_event;
 	    websock.onclose = handle_close;
-	    setTimeout(function() { keep_alive(); }, keep_alive_interval);
 
 	} else { // browser does not support websockets
 	    debug_message(self.not_support_msg);
@@ -55,6 +55,13 @@ HS.Notification.prototype = (function () {
      * @method handle_close
      */    
     var handle_open = function() {
+	if (keep_alive_timer != null) {
+	    clearTimeout(keep_alive_timer);
+	    keep_alive_timer = null;
+	}
+
+	keep_alive_timer = 
+	    setTimeout(function() { keep_alive(); }, keep_alive_interval);
     };
 
     /**
@@ -64,6 +71,11 @@ HS.Notification.prototype = (function () {
      */    
     var handle_close = function() {
 	debug_message(websock_shoutdown_msg);
+	
+	if (keep_alive_timer != null) {
+	    clearTimeout(keep_alive_timer);
+	    keep_alive_timer = null;
+	}
 	setTimeout(function() { open_connection("retry"); }, 
 		   reconnect_interval);
     };
@@ -106,7 +118,8 @@ HS.Notification.prototype = (function () {
     var keep_alive = function() {
 	if (websock) {
 	    websock.send("TICK");
-	    setTimeout(function() { keep_alive(); }, keep_alive_interval);
+	    keep_alive_timer = 
+		setTimeout(function() { keep_alive(); }, keep_alive_interval);
 	}
     };
 
