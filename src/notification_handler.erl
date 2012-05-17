@@ -46,6 +46,7 @@ websocket_init(_TransportName, Req, _Opts) ->
 %%%===================================================================
 %% 一定時間通信が無いと接続を遮断するルータ対策。ブラウザと１分に１回やりとりする。
 websocket_handle({text, <<"TICK">>}, Req, State) ->
+    ?debugVal("TICK"),
     Reply = jiffy:encode({[{<<"type">>, <<"keep_alive">>}, 
                            {<<"data">>, <<"TACK">>}]}),
     {reply, {text, Reply}, Req, State};
