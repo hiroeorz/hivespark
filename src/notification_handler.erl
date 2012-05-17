@@ -44,8 +44,15 @@ websocket_init(_TransportName, Req, _Opts) ->
 %% called when request received from http client.
 %% @end
 %%%===================================================================
+%% 一定時間通信が無いと接続を遮断するルータ対策。ブラウザと１分に１回やりとりする。
+websocket_handle({text, <<"TICK">>}, Req, State) ->
+    Reply = jiffy:encode({[{<<"type">>, <<"keep_alive">>}, 
+                           {<<"data">>, <<"TACK">>}]}),
+    {reply, {text, Reply}, Req, State};
+
 websocket_handle({text, Msg}, Req, State) ->
     {reply, {text, << "That's what she said! ", Msg/binary >>}, Req, State};
+
 websocket_handle(_Data, Req, State) ->
     {ok, Req, State}.
 

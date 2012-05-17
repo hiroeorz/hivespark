@@ -15,12 +15,14 @@ HS.Notification.prototype = (function () {
     'use strict';
 
     /* private */
-    var websock = undefined;
-    var not_support_msg = "残念!! あなたのブラウザではプッシュ通知サービスはサポートされません!";
-    var websock_shoutdown_msg = "(;･ิω･ิ)サーバとの通信が途切れました";
     var uri = "ws://" + location.host + "/websock/notification";
+    var websock = undefined;
+    var not_support_msg = "プッシュ通知サービスはサポートされません";
+    var websock_shoutdown_msg = "(;･ิω･ิ)サーバとの通信が途切れました";
+    var reconnect_interval = 5000;
+    var keep_alive_interval = 60000;
 
-    var open_connection = function() {
+    var open_connection = function(mode) {
 	var self = this;
 
 	if ("WebSocket" in window) {
@@ -33,29 +35,58 @@ HS.Notification.prototype = (function () {
 	    websock.onopen = handle_open;
 	    websock.onmessage = handle_event;
 	    websock.onclose = handle_close;
-	    
+	    setTimeout(function() { keep_alive(); }, keep_alive_interval);
+
 	} else { // browser does not support websockets
 	    debug_message(self.not_support_msg);
+
+	    if (mode == "retry") {
+		setTimeout(function() { open_connection("retry"); }, 
+			   reconnect_interval);
+	    }
 	}	
     };
 
     var debug_message = function(msg) { /* alert(msg); */ };
 
+    /**
+     * サーバとの接続がオープンしたら呼ばれる
+     *
+     * @method handle_close
+     */    
     var handle_open = function() {
     };
 
+    /**
+     * サーバとの接続が遮断されたら呼ばれる
+     *
+     * @method handle_close
+     */    
     var handle_close = function() {
 	debug_message(websock_shoutdown_msg);
+	setTimeout(function() { open_connection("retry"); }, 
+		   reconnect_interval);
     };
 
+    /**
+     * サーバからデータが送信されたら呼ばれる
+     *
+     * @method handle_event
+     */    
     var handle_event = function(evt) {
 	var msg_data = evt.data; debug_message(msg_data);
 	var msg = JSON.parse(msg_data);
 	HS.MessageQueue.push(msg);
 	
+	if (msg.type == "keep_alive") { handle_keep_alive(msg); }
 	if (msg.type == "message") { handle_message(msg); }
     };
  
+    /**
+     * ユーザへののティフィケーションメッセージを受け取った時の処理
+     *
+     * @method handle_message
+     */
     var handle_message = function(msg) {
 	var view = create_notification_view(msg.message);
 	$("div.notification-message").remove();
@@ -66,6 +97,26 @@ HS.Notification.prototype = (function () {
 	    $(view).animate({opacity:0.5}, 2000);
 	}, 10000)
     };
+
+    /**
+     * 一定時間通信しないと接続遮断するルータ対策に時々通信しておく
+     *
+     * @method keep_alive
+     */
+    var keep_alive = function() {
+	if (websock) {
+	    websock.send("TICK");
+	    setTimeout(function() { keep_alive(); }, keep_alive_interval);
+	}
+    };
+
+    /**
+     * keep_aliveでデータ送信した応答確認用関数。今はなにもしない
+     *
+     * @method handle_keep_alive
+     */
+    var handle_keep_alive = function(msg) {
+    }
 
     /**
      * メッセージ要素のビューを作って返す
