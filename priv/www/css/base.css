@@ -947,4 +947,5 @@ div#usr-show div#usr-description p {
 
 div#contents div.usr-list ul#timeline li {
   border-right: 1px solid #bababa;
+  cursor: pointer;
 }

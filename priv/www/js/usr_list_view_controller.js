@@ -49,13 +49,37 @@ HS.UsrListViewController.prototype = (function () {
 	name_b.appendChild(name_text);
 	
 	var description_p = document.createElement("p");
-	var description_text = document.createTextNode(usr.description);
+	var description_text = "";
+
+	if (usr.description.length < 40) {
+	    description_text = document.createTextNode(usr.description);
+	} else {
+	    description_text = 
+		document.createTextNode(usr.description.substr(0, 40) + "..");
+	}
+
 	description_p.appendChild(description_text);
 
 	li.appendChild(img);
 	li.appendChild(name_b);
 	li.appendChild(description_p);
+
+	$(li).bind("click", function() {
+	    show_usr_info(usr);
+	});
+
 	return li;
+    }
+
+    /**
+     * 選択されたユーザ情報を表示する
+     *
+     * @method show_usr_info
+     */
+    var show_usr_info = function(usr) {
+	$("div#usr-description img").attr("src", usr.icon_url);
+	$("div#usr-description b").text(usr.longname);
+	$("div#usr-description p").text(usr.description);
     }
 
     /**
