@@ -105,6 +105,8 @@ HS.Notification.prototype = (function () {
 	$("div#header").append(view);
 	$(view).fadeIn("normal");
 
+	new HS.TeamViewController().set_messages_to_timeline([msg.message]);
+
 	setTimeout(function() {
 	    $(view).animate({opacity:0.5}, 2000);
 	}, 10000)

@@ -672,7 +672,7 @@ HS.TeamViewController.prototype = (function () {
 	       function(data) {
 		   var json = JSON.parse(data);
 		   if (json.result != true) { alert("送信に失敗しました"); }
-		   get_new_messages(team_id);
+		   /* get_new_messages(team_id); */
 	       })
     };
 
@@ -697,9 +697,9 @@ HS.TeamViewController.prototype = (function () {
     var new_message_color = "#fff0f5"
 
     /**
-     * 表示しているチームのメッセージを取得して表示します
+     * 取得したメッセージをタイムラインに表示します
      *
-     * @method get_messages
+     * @method set_messages_to_timeline
      */
     var set_messages_to_timeline = function(messages, color) {
 	if (color == undefined) { color = "#fff"; }
@@ -713,6 +713,11 @@ HS.TeamViewController.prototype = (function () {
 	}
     };
 
+    /**
+     * 新規のメッセージを取得します
+     *
+     * @method get_messages
+     */
     var get_messages = function(team_id) {
 	$("ul#timeline").empty();
 	$.getJSON("/team/get_messages?team_id=" + team_id,
@@ -728,7 +733,7 @@ HS.TeamViewController.prototype = (function () {
 		      if (messages.length > 0) {
 			  $("ul#timeline li").css("background-color", "#fff");
 		      }
-
+		      
 		      $("ul#timeline li").css("background-color", "#fff");
 		      set_messages_to_timeline(messages, new_message_color);
 		  });
@@ -827,8 +832,11 @@ HS.TeamViewController.prototype = (function () {
 		start_get_message_interval(params.team_id, 
 					   check_new_message_interval);
 	    }, check_new_message_interval);
-	}
+	},
 
+	set_messages_to_timeline: function(messages, color) {
+	    set_messages_to_timeline(messages, new_message_color);
+	}
     };
 }());
 
