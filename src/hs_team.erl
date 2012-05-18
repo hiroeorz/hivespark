@@ -214,7 +214,11 @@ to_tuple(TeamId) when is_integer(TeamId) ->
     end;
 
 to_tuple(Team) ->
-    {ok, Owner} = hs_usr:lookup_id(Team#team.owner_id),
+    Owner = case hs_usr:lookup_id(Team#team.owner_id) of
+                {ok, Usr} -> Usr;
+                {error, not_found} -> null
+            end,
+
     {ok, Members} = get_members(Team#team.id),
 
     {[{id, Team#team.id}, {owner, hs_usr:to_tuple(Owner)},
