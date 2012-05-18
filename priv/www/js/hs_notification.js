@@ -99,6 +99,9 @@ HS.Notification.prototype = (function () {
      *
      * @method handle_message
      */
+    var notification_change_flag = false;
+    var notification_title_change_timer = null;
+
     var handle_message = function(msg) {
 	var view = create_notification_view(msg.message);
 	$("div.notification-message").remove();
@@ -110,6 +113,32 @@ HS.Notification.prototype = (function () {
 	setTimeout(function() {
 	    $(view).animate({opacity:0.5}, 2000);
 	}, 10000)
+
+	var original_title = $("title").text();
+
+	/* 他のユーザのメッセージ投稿があった場合にウインドウのタイトルを反転させる */
+	if (notification_title_change_timer == undefined) {
+	    notification_title_change_timer = setInterval(function() { 
+		if (true == notification_change_flag) {
+		    $("title").text("新規メッセージがあります");		
+		    notification_change_flag = false;
+		} else {
+		    $("title").text(original_title);
+		    notification_change_flag = true;
+		}
+	    }, 1000);
+
+	    var stop_fun = function() {
+		clearInterval(notification_title_change_timer);
+		$("title").text(original_title);
+		notification_title_change_timer = undefined;
+		window.onfocus = undefined;
+		document.onclick = undefined;
+	    };
+
+	    window.onfocus = stop_fun;
+	    document.onclick = stop_fun;
+	};
     };
 
     /**
