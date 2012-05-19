@@ -5,7 +5,7 @@
 -include("hivespark.hrl").
 
 -import(hs_util, [pgdatetime_to_seconds/1]).
--import(hs_mock, [pg_fields_tuples/0,
+-import(hs_mock, [pg_usr_fields_tuples/0,
                   pg_record_usr_1/0, record_usr_1/0,
                   pg_record_usr_2/0, record_usr_2/0,
                   pg_record_usr_3/0, record_usr_3/0]).
@@ -20,7 +20,7 @@ q_test_() ->
         fun() ->
                 meck:expect(postgres_pool, equery, 
                             fun(_, _, _) -> 
-                                    {ok, pg_fields_tuples(), [pg_record_usr_1()]}
+                                    {ok, pg_usr_fields_tuples(), [pg_record_usr_1()]}
                             end),
 
                 {ok, UsrList} = 
@@ -36,7 +36,7 @@ q_test_() ->
         fun() ->
                 meck:expect(postgres_pool, equery, 
                             fun(_, _, _) -> 
-                                    {ok, pg_fields_tuples(), 
+                                    {ok, pg_usr_fields_tuples(), 
                                      [pg_record_usr_1(), 
                                       pg_record_usr_2(),
                                       pg_record_usr_3()]}
@@ -69,7 +69,7 @@ all_test_() ->
                             fun(_, Sql, Params) ->
                                     ?assertEqual("select * from usrs order by id desc limit $1", Sql),
                                     ?assertEqual([3], Params),
-                                    {ok, pg_fields_tuples(), 
+                                    {ok, pg_usr_fields_tuples(), 
                                      [pg_record_usr_1(),
                                       pg_record_usr_2(),
                                       pg_record_usr_3()]}
@@ -100,7 +100,7 @@ list_test_() ->
                             fun(_, Sql, Params) ->
                                     ?assertEqual("select * from usrs where id in (1,3)", Sql),
                                     ?assertEqual([], Params),
-                                    {ok, pg_fields_tuples(), 
+                                    {ok, pg_usr_fields_tuples(), 
                                      [pg_record_usr_1(),
                                       pg_record_usr_3()]}
                             end),
@@ -119,7 +119,7 @@ list_test_() ->
                             fun(_, Sql, Params) ->
                                     ?assertEqual("select * from usrs where id in (1,3)", Sql),
                                     ?assertEqual([], Params),
-                                    {ok, pg_fields_tuples(), 
+                                    {ok, pg_usr_fields_tuples(), 
                                      [pg_record_usr_1(),
                                       pg_record_usr_3()]}
                             end),
@@ -138,7 +138,7 @@ list_test_() ->
                             fun(_, Sql, Params) ->
                                     ?assertEqual("select * from usrs where id in (1,3)", Sql),
                                     ?assertEqual([], Params),
-                                    {ok, pg_fields_tuples(), 
+                                    {ok, pg_usr_fields_tuples(), 
                                      [pg_record_usr_1(),
                                       pg_record_usr_3()]}
                             end),
@@ -165,7 +165,7 @@ insert_test_() ->
         fun() ->
                 meck:expect(postgres_pool, equery, 
                             fun(_, _Sql, _Params) ->
-                                    {ok, pg_fields_tuples(), 
+                                    {ok, pg_usr_fields_tuples(), 
                                      [pg_record_usr_1()]}
                             end),
 
@@ -196,7 +196,7 @@ lookup_id_test_() ->
         fun() ->
                 meck:expect(postgres_pool, equery, 
                             fun(_, _Sql, _Params) ->
-                                    {ok, pg_fields_tuples(), 
+                                    {ok, pg_usr_fields_tuples(), 
                                      [pg_record_usr_1()]}
                             end),
 
@@ -211,7 +211,7 @@ lookup_id_test_() ->
         fun() ->
                 meck:expect(postgres_pool, equery, 
                             fun(_, _Sql, _Params) ->
-                                    {ok, pg_fields_tuples(), 
+                                    {ok, pg_usr_fields_tuples(), 
                                      [pg_record_usr_1()]}
                             end),
 
@@ -226,7 +226,7 @@ lookup_id_test_() ->
         fun() ->
                 meck:expect(postgres_pool, equery, 
                             fun(_, _Sql, _Params) ->
-                                    {ok, pg_fields_tuples(), 
+                                    {ok, pg_usr_fields_tuples(), 
                                      [pg_record_usr_1()]}
                             end),
 
@@ -241,7 +241,7 @@ lookup_id_test_() ->
         fun() ->
                 meck:expect(postgres_pool, equery, 
                             fun(_, _Sql, _Params) ->
-                                    {ok, pg_fields_tuples(), []}
+                                    {ok, pg_usr_fields_tuples(), []}
                             end),
 
                 {error, not_found} = hs_usr_db:lookup_id(99),
@@ -264,7 +264,7 @@ lookup_name_test_() ->
         fun() ->
                 meck:expect(postgres_pool, equery, 
                             fun(_, _Sql, _Params) ->
-                                    {ok, pg_fields_tuples(), 
+                                    {ok, pg_usr_fields_tuples(), 
                                      [pg_record_usr_1()]}
                             end),
 
@@ -278,7 +278,7 @@ lookup_name_test_() ->
         fun() ->
                 meck:expect(postgres_pool, equery, 
                             fun(_, _Sql, _Params) ->
-                                    {ok, pg_fields_tuples(), []}
+                                    {ok, pg_usr_fields_tuples(), []}
                             end),
 
                 {error, not_found} = hs_usr_db:lookup_name("not_exit_user"),
@@ -319,7 +319,7 @@ update_test_() ->
                                             R1#usr.lat, R1#usr.lng,
                                             R1#usr.description, 
                                             {{2012,5,18}, {23,55,4.0}}},
-                                    {ok, pg_fields_tuples(), [PgR1]}
+                                    {ok, pg_usr_fields_tuples(), [PgR1]}
                             end),
 
                 {ok, Usr} = hs_usr_db:update(R1),
@@ -341,7 +341,7 @@ update_test_() ->
 
                 meck:expect(postgres_pool, equery, 
                             fun(_, _Sql, _Params) ->
-                                    {ok, pg_fields_tuples(), []}
+                                    {ok, pg_usr_fields_tuples(), []}
                             end),
 
                 {error, not_found} = hs_usr_db:update(R1),
