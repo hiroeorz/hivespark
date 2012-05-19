@@ -18,13 +18,16 @@ q_test_() ->
       [
        {"1件のレコードをデータベースから取得した値のパース",
         fun() ->
+                Sql = "select * from usrs limit 1 order by id",
                 meck:expect(postgres_pool, equery, 
-                            fun(_, _, _) -> 
-                                    {ok, pg_usr_fields_tuples(), [pg_record_usr_1()]}
+                            fun(_, S, P) -> 
+                                    ?assertEqual(S, Sql),
+                                    ?assertEqual([], P),
+                                    {ok, pg_usr_fields_tuples(), 
+                                     [pg_record_usr_1()]}
                             end),
 
-                {ok, UsrList} = 
-                    hs_usr_db:q("select * from usrs limit 1 order by id"),
+                {ok, UsrList} = hs_usr_db:q(Sql),
 
                 ?assertEqual(1, length(UsrList)),
                 ?assertEqual(record_usr_1(), lists:nth(1, UsrList)),
@@ -34,16 +37,18 @@ q_test_() ->
 
        {"3件のレコードをデータベースから取得した値のパース",
         fun() ->
+                Sql = "select * from usrs limit 1 order by id",
                 meck:expect(postgres_pool, equery, 
-                            fun(_, _, _) -> 
+                            fun(_, S, P) -> 
+                                    ?assertEqual(Sql, S),
+                                    ?assertEqual([], P),
                                     {ok, pg_usr_fields_tuples(), 
                                      [pg_record_usr_1(), 
                                       pg_record_usr_2(),
                                       pg_record_usr_3()]}
                             end),
 
-                {ok, UsrList} = 
-                    hs_usr_db:q("select * from usrs limit 1 order by id"),
+                {ok, UsrList} = hs_usr_db:q(Sql),
 
                 ?assertEqual(3, length(UsrList)),
                 ?assertEqual(record_usr_1(), lists:nth(1, UsrList)),
@@ -164,7 +169,7 @@ insert_test_() ->
        {"default",
         fun() ->
                 meck:expect(postgres_pool, equery, 
-                            fun(_, _Sql, _Params) ->
+                            fun(_, _S, _P) ->
                                     {ok, pg_usr_fields_tuples(), 
                                      [pg_record_usr_1()]}
                             end),
@@ -195,7 +200,7 @@ lookup_id_test_() ->
        {"default",
         fun() ->
                 meck:expect(postgres_pool, equery, 
-                            fun(_, _Sql, _Params) ->
+                            fun(_, _S, _P) ->
                                     {ok, pg_usr_fields_tuples(), 
                                      [pg_record_usr_1()]}
                             end),
@@ -210,7 +215,7 @@ lookup_id_test_() ->
        {"binary argument",
         fun() ->
                 meck:expect(postgres_pool, equery, 
-                            fun(_, _Sql, _Params) ->
+                            fun(_, _S, _P) ->
                                     {ok, pg_usr_fields_tuples(), 
                                      [pg_record_usr_1()]}
                             end),
@@ -225,7 +230,7 @@ lookup_id_test_() ->
        {"list argument",
         fun() ->
                 meck:expect(postgres_pool, equery, 
-                            fun(_, _Sql, _Params) ->
+                            fun(_, _S, _P) ->
                                     {ok, pg_usr_fields_tuples(), 
                                      [pg_record_usr_1()]}
                             end),
@@ -240,7 +245,7 @@ lookup_id_test_() ->
        {"not found",
         fun() ->
                 meck:expect(postgres_pool, equery, 
-                            fun(_, _Sql, _Params) ->
+                            fun(_, _S, _P) ->
                                     {ok, pg_usr_fields_tuples(), []}
                             end),
 
@@ -263,7 +268,7 @@ lookup_name_test_() ->
        {"default",
         fun() ->
                 meck:expect(postgres_pool, equery, 
-                            fun(_, _Sql, _Params) ->
+                            fun(_, _S, _P) ->
                                     {ok, pg_usr_fields_tuples(), 
                                      [pg_record_usr_1()]}
                             end),
@@ -277,7 +282,7 @@ lookup_name_test_() ->
        {"not found",
         fun() ->
                 meck:expect(postgres_pool, equery, 
-                            fun(_, _Sql, _Params) ->
+                            fun(_, _S, _P) ->
                                     {ok, pg_usr_fields_tuples(), []}
                             end),
 
@@ -308,7 +313,7 @@ update_test_() ->
                            lng = "234.56"},
 
                 meck:expect(postgres_pool, equery, 
-                            fun(_, _Sql, _Params) ->
+                            fun(_, _S, _P) ->
                                     PgR1 = {R1#usr.id, 
                                             R1#usr.name, 
                                             R1#usr.longname, 
@@ -340,7 +345,7 @@ update_test_() ->
                            lng = "234.56"},
 
                 meck:expect(postgres_pool, equery, 
-                            fun(_, _Sql, _Params) ->
+                            fun(_, _S, _P) ->
                                     {ok, pg_usr_fields_tuples(), []}
                             end),
 
