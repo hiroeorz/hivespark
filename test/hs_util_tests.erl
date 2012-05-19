@@ -2,14 +2,24 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
--import(hs_util, [create_datetime_string/1]).
+-import(hs_util, [pgdatetime_to_seconds/1]).
 
-create_datetime_string_test_() ->
-    [
-        {"default",
-            ?_assertEqual(<<"2000-01-01 00:00:00">>,
-                          create_datetime_string({{2000,1,1},{0,0,0}}))},
-        {"default with milli-sec ?",
-            ?_assertEqual(<<"2000-01-01 00:00:00">>,
-                          create_datetime_string({{2000,1,1},{0,0,0,0}}))}
-    ].
+pgdatetime_to_seconds_test_() ->
+    {inorder,
+     {setup, fun() -> ok end, fun(_) -> ok end,
+
+      [
+       {"default",
+        fun() ->
+                ?assertEqual(63113904000,
+                             pgdatetime_to_seconds({{2000, 1, 1},
+                                                     { 0, 0, 0.0}})),
+                ?assertEqual(63113904001,
+                             pgdatetime_to_seconds({{2000, 1, 1},
+                                                    { 0, 0, 1.0}}))
+        end
+       }
+
+      ]
+     }
+    }.

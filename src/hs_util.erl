@@ -21,7 +21,7 @@
          redirect_to/2, redirect_to/3,
          priv_dir/0, ext_part/1, ext_type/1, 
          get_multi_data/1, get_param_data/1, acc_multipart/2,
-         create_datetime_string/1, pgdaatetime_to_seconds/1,
+         create_datetime_string/1, pgdatetime_to_seconds/1,
          get_request_params/1, reply/4, reply/2, create_args/2,
          notification_teams_usrs/2]).
 
@@ -263,10 +263,10 @@ create_datetime_string(Seconds) when is_integer(Seconds) ->
 
 -type float_second_datetime() :: {calendar:date(), {calendar:hour(), calendar:minute(), float()}}.
 
--spec pgdaatetime_to_seconds(FDateTime) -> Seconds when
+-spec pgdatetime_to_seconds(FDateTime) -> Seconds when
       FDateTime :: float_second_datetime(),
       Seconds :: non_neg_integer().
-pgdaatetime_to_seconds({{Year, Month, Day}, {Hour, Min, Second}}) 
+pgdatetime_to_seconds({{Year, Month, Day}, {Hour, Min, Second}}) 
   when is_float(Second)->
     DateTime = {{Year, Month, Day}, {Hour, Min, round(Second)}},
     calendar:datetime_to_gregorian_seconds(DateTime).

@@ -110,7 +110,7 @@ parse_record([Column | CTail], [Value | VTail], Result) ->
                           undefined -> undefined;
                           V -> 
                               Result#usr_team{
-                                created_at = hs_util:pgdaatetime_to_seconds(V)}
+                                created_at = hs_util:pgdatetime_to_seconds(V)}
                       end
               end,
     parse_record(CTail, VTail, Result1).

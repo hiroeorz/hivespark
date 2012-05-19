@@ -44,7 +44,7 @@ q(Sql) -> q(Sql, []).
       Reason :: tuple().
 q(Sql, Params) ->
     case postgres_pool:equery(?DB, Sql, Params) of
-        {ok, Columns, Values} -> 
+        {ok, Columns, Values} ->
             {ok, parse_result(Columns, Values, [])};
         {ok, _Count} -> 
             ok;
@@ -61,7 +61,7 @@ q(Sql, Params) ->
 -spec all(Count) -> {ok, UsrList} when
       Count :: integer(),
       UsrList :: [#usr{}] | [].
-all(Count) ->
+all(Count) when is_integer(Count) ->
     q("select * from usrs order by id desc limit $1", [Count]).
 
 %%--------------------------------------------------------------------
@@ -118,7 +118,6 @@ insert(Name, LongName, Mail, Password, IconUrl, Description) ->
 
     case Result of
         {ok, []} -> {error, empty_result};
-        {error, Reason} -> {error, Reason};
         {ok, [Record]} -> {ok, Record}
     end.
 
@@ -135,8 +134,7 @@ lookup_id(UsrId) when is_list(UsrId) -> lookup_id(list_to_integer(UsrId));
 lookup_id(UsrId) when is_integer(UsrId) -> 
     case q("select * from usrs where id = $1", [UsrId]) of
         {ok, [Record]} -> {ok, Record};
-        {ok, []} -> {error, not_found};
-        {error, Reason} -> {error, Reason}
+        {ok, []} -> {error, not_found}
     end.        
 
 %%--------------------------------------------------------------------
@@ -150,18 +148,16 @@ lookup_id(UsrId) when is_integer(UsrId) ->
 lookup_name(Name) when is_binary(Name) or is_list(Name) ->
     case q("select * from usrs where name = $1", [Name]) of
         {ok, [Record]} -> {ok, Record};
-        {ok, []} -> {error, not_found};
-        {error, Reason} -> {error, Reason}
+        {ok, []} -> {error, not_found}
     end.        
 
 %%--------------------------------------------------------------------
 %% @doc update user parameter.
 %% @end
 %%--------------------------------------------------------------------
--spec update(Usr) -> {ok, UpdatedUsr} | {error, Reason} when
+-spec update(Usr) -> {ok, UpdatedUsr} | {error, not_found} when
       Usr :: #usr{},
-      UpdatedUsr :: #usr{},
-      Reason :: atom().
+      UpdatedUsr :: #usr{}.
 update(Usr) ->
     Result = q("update usrs set name = $2,
                                 longname = $3,
@@ -178,24 +174,20 @@ update(Usr) ->
 
     case Result of
         {ok, [Record]} -> {ok, Record};
-        {ok, []} -> {error, empty_result};
-        {error, Reason} -> {error, Reason}
+        {ok, []} -> {error, not_found}
     end.
 
 %%--------------------------------------------------------------------
 %% @doc delete usr from database.
 %% @end
 %%--------------------------------------------------------------------
--spec delete(UsrId) -> {ok, deleted} | {error, Reason} when
-      UsrId :: integer() | string() | binary(),
-      Reason :: tuple().
+-spec delete(UsrId) -> {ok, deleted} when
+      UsrId :: integer() | string() | binary().
 delete(UsrId) when is_binary(UsrId) -> delete(binary_to_list(UsrId));
 delete(UsrId) when is_list(UsrId) -> delete(list_to_integer(UsrId));
 delete(UsrId) when is_integer(UsrId) ->
-    case q("delete from usrs where id = $1", [UsrId]) of
-        ok -> {ok, deleted};
-        {error, Reason} -> {error, Reason}
-    end.     
+    ok = q("delete from usrs where id = $1", [UsrId]),
+    {ok, deleted}.
 
 %%--------------------------------------------------------------------
 %% @doc user authenticate.
@@ -356,8 +348,7 @@ parse_record([Column | CTail], [Value | VTail], Result) ->
                           undefined -> undefined;
                           V ->
                               Result#usr{
-                                created_at = hs_util:pgdaatetime_to_seconds(V)}
+                                created_at = hs_util:pgdatetime_to_seconds(V)}
                       end
               end,
-
     parse_record(CTail, VTail, Result1).
