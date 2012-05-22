@@ -15,12 +15,35 @@
 #. /usr/share/doc/git-core/contrib/hooks/post-receive-email
 
 AppHome=~/src/hivespark
-Git=/usr/bin/git
+Git=git
 HiveSpark=./rel/hivespark/bin/hivespark
+alias git='git --git-dir=.git'
 
+echo
+echo "### Hello This is HiveSpark Server ###"
+echo
 cd ${AppHome}
-$Git --git-dir=.git pull lens master
-make
-$HiveSpark stop
-$HiveSpark start
 
+echo
+echo "######################################"
+echo "update local files."
+$Git --git-dir=.git pull lens master
+
+echo
+echo "######################################"
+echo -n "backuping privious release..."
+rm -r ./rel/hivespark.priv
+cp -r ./rel/hivespark ./rel/hivespark.priv
+echo "ok"
+
+echo
+echo "######################################"
+echo "compiling..."
+make
+
+echo
+echo "######################################"
+echo -n "Restarting Service..."
+$HiveSpark stop 
+$HiveSpark start 
+echo "######################################"
