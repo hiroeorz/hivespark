@@ -20,6 +20,7 @@
 -record(state, {require_login = false :: boolean()}).
 
 -define(ICON_DIR, "/usr/local/var/hivespark/images/").
+-define(MaxTeamCount, 16).
 
 %%%===================================================================
 %% @doc HTTP CallBacks
@@ -196,9 +197,9 @@ list([_ParamList, _Req, State, SessionKey]) ->
 
 statuses_list([_ParamList, _Req, State, _SessionKey]) ->
     StopTeams = lists:map(fun(T) -> hs_team:to_tuple(T) end,
-                          hs_team:statuses_list(0, 6)),
+                          hs_team:statuses_list(0, ?MaxTeamCount)),
     BurningTeams = lists:map(fun(T) -> hs_team:to_tuple(T) end,
-                             hs_team:statuses_list(1, 6)),
+                             hs_team:statuses_list(1, ?MaxTeamCount)),
 
     Reply = {[{<<"stop_teams">>, StopTeams},
               {<<"burning_teams">>, BurningTeams}]},
