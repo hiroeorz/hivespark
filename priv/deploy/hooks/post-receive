@@ -19,7 +19,7 @@ Git=/usr/bin/git
 HiveSpark=./rel/hivespark/bin/hivespark
 
 cd ${AppHome}
-$Git pull lens master
+$Git --git-dir=.git pull lens master
 make
 $HiveSpark stop
 $HiveSpark start
