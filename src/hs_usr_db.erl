@@ -197,7 +197,8 @@ delete(UsrId) when is_integer(UsrId) ->
       UsernameBin :: binary(),
       PasswordBin :: binary(),
       UsrId :: integer().
-authenticate(UsernameBin, PasswordBin) ->
+authenticate(UsernameBin, PasswordBin) when is_binary(UsernameBin) and
+                                            is_binary(PasswordBin) ->
     Username = binary_to_list(UsernameBin),
 
     case lookup_name(Username) of

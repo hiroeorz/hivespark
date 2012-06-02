@@ -89,7 +89,7 @@ redirect_to(Url, State) ->
     redirect_to(Url, [], State).
 
 redirect_to(Url, Header, State) when is_list(Header) ->
-    {307, [{'Location', Url} | Header], <<"">>, State}.
+    {303, [{'Location', Url} | Header], <<"">>, State}.
 
 %%--------------------------------------------------------------------
 %% @doc
