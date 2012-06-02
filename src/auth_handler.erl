@@ -87,7 +87,8 @@ login([ParamList, _Req, State, _SessionKey]) ->
 
             case Format of
                 <<"html">> ->
-                    hs_util:not_authenticated(State);
+                    {200, _, Html, _} = hs_util:view("login.html", State),
+                    hs_util:not_authenticated([], Html, State);
                 _ ->
                     hs_util:not_authenticated(jiffy:encode({Reply}), State)
             end
