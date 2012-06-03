@@ -30,13 +30,15 @@
                    team_id      ::integer(),
                    created_at   ::non_neg_integer()}).
 
--record(message, {id            ::integer(),
-                  usr_id        ::integer(),
-                  team_id       ::integer(),
-                  text          ::binary(),
-                  created_at    ::non_neg_integer(),
-                  lat           ::string(),
-                  lng           ::string()}).
+-record(message, {id              ::integer(),
+                  usr_id          ::integer(),
+                  team_id         ::integer(),
+                  text            ::binary(),
+                  in_article_id   ::integer(),
+                  in_reply_to_id  ::integer(),
+                  created_at      ::non_neg_integer(),
+                  lat             ::string(),
+                  lng             ::string()}).
 
 -record(article, {id            ::binary(),
                   usr_id        ::integer(),

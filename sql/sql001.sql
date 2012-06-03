@@ -49,6 +49,8 @@ create table messages (
 create index messages_usr_id_id_index on messages (usr_id, id);
 create index messages_team_id_id_index on messages (team_id, id);
 
+alter table messages add column in_article_id bigint;
+alter table messages add column in_reply_to_id bigint;
 
 create table articles (
        id serial not null,

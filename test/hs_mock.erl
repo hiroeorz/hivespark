@@ -16,6 +16,10 @@
          pg_record_team_2/0, record_team_2/0,
          pg_record_team_3/0, record_team_3/0]).
 
+-export([pg_message_fields_tuples/0,
+         pg_record_message_1/0, record_message_1/0,
+         pg_record_message_2/0, record_message_2/0]).
+
 pg_usr_fields_tuples() ->
     [{column, <<"id">>, 0, 0, 0, 0}, 
      {column, <<"name">>, 0, 0, 0, 0}, 
@@ -131,3 +135,46 @@ record_team_3() ->
           status = 0,
           status_description = "Now Stopping?",
           created_at = pgdatetime_to_seconds({{2012,5,20}, {23,55,5.0}})}.
+
+pg_message_fields_tuples() ->
+    [{column, <<"id">>, 0, 0, 0, 0}, 
+     {column, <<"usr_id">>, 0, 0, 0, 0}, 
+     {column, <<"team_id">>, 0, 0, 0, 0},
+     {column, <<"text">>, 0, 0, 0, 0}, 
+     {column, <<"lat">>, 0, 0, 0, 0},
+     {column, <<"lng">>, 0, 0, 0, 0}, 
+     {column, <<"in_article_id">>, 0, 0, 0, 0},
+     {column, <<"in_reply_to_id">>, 0, 0, 0, 0},
+     {column, <<"created_at">>, 0, 0, 0, 0}].
+
+pg_record_message_1() ->
+    {1, 2, 3, "hello world", "11.111", "22.222", 
+     null, null, {{2012,5,18}, {23,55,4.0}}}.
+
+pg_record_message_2() ->
+    {2, 2, 4, "hello world 2", "11.222", "22.333", 
+     1, null, {{2012,5,17}, {23,55,4.0}}}.
+
+record_message_1() ->
+    #message{id = 1,
+             usr_id = 2,
+             team_id = 3,
+             text = "hello world",
+             lat = "11.111",
+             lng = "22.222",
+             in_article_id = null,
+             in_reply_to_id = null,
+             created_at = pgdatetime_to_seconds({{2012,5,18}, {23,55,4.0}})
+            }.
+
+record_message_2() ->
+    #message{id = 2,
+             usr_id = 2,
+             team_id = 4,
+             text = "hello world 2",
+             lat = "11.222",
+             lng = "22.333",
+             in_article_id = 1,
+             in_reply_to_id = null,
+             created_at = pgdatetime_to_seconds({{2012,5,17}, {23,55,4.0}})
+            }.

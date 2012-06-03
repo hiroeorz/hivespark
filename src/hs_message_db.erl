@@ -52,14 +52,18 @@ q(Sql, Params) ->
       Reason :: atom().
 insert(Message) ->
     Result =  q("insert into messages (usr_id, team_id, text, created_at, 
-                                       lat, lng)
-                   values ($1, $2, $3, $4, $5, $6) returning *",
+                                       lat, lng, 
+                                       in_article_id,
+                                       in_reply_to_id)
+                   values ($1, $2, $3, $4, $5, $6, $7, $8) returning *",
                 [Message#message.usr_id, 
                  Message#message.team_id, 
                  Message#message.text, 
                  {date(), time()},
                  Message#message.lat, 
-                 Message#message.lng]),
+                 Message#message.lng,
+                 Message#message.in_article_id,
+                 Message#message.in_reply_to_id]),
 
     case Result of
         {ok, [NewMessage]} -> {ok, NewMessage};
@@ -178,17 +182,19 @@ parse_result(Columns, [DBRecord | RTail], Results) ->
       EmptyRecord :: #message{},
       Record :: #message{}.
 parse_record([], [], Result) -> Result;
-parse_record([Column | CTail], [Value | VTail], Result) ->
+parse_record([Column | CTail], [Val | VTail], Result) ->
     {column, Name, _, _, _, _} = Column,
     Result1 = case Name of
-                  <<"id">> -> Result#message{id = Value};
-                  <<"usr_id">> -> Result#message{usr_id = Value};
-                  <<"team_id">> -> Result#message{team_id = Value};
-                  <<"text">> -> Result#message{text = Value};
-                  <<"lat">> -> Result#message{lat = Value};
-                  <<"lng">> -> Result#message{lng = Value};
+                  <<"id">> -> Result#message{id = Val};
+                  <<"usr_id">> -> Result#message{usr_id = Val};
+                  <<"team_id">> -> Result#message{team_id = Val};
+                  <<"text">> -> Result#message{text = Val};
+                  <<"in_article_id">> -> Result#message{in_article_id = Val};
+                  <<"in_reply_to_id">> -> Result#message{in_reply_to_id = Val};
+                  <<"lat">> -> Result#message{lat = Val};
+                  <<"lng">> -> Result#message{lng = Val};
                   <<"created_at">> -> 
-                      case Value of
+                      case Val of
                           undefined -> undefined;
                           V -> 
                               Result#message{

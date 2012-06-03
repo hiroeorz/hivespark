@@ -259,6 +259,7 @@ send_message([ParamList, _Req, State, SessionKey]) ->
     TeamIdBin = proplists:get_value(<<"team_id">>, ParamList),
     TeamId = list_to_integer(binary_to_list(TeamIdBin)),
     TextBin = proplists:get_value(<<"text">>, ParamList),
+    
     Usr = hs_session:get_usr(SessionKey),
     Msg = #message{usr_id = Usr#usr.id, team_id = TeamId, text = TextBin},
 
