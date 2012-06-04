@@ -259,9 +259,21 @@ send_message([ParamList, _Req, State, SessionKey]) ->
     TeamIdBin = proplists:get_value(<<"team_id">>, ParamList),
     TeamId = list_to_integer(binary_to_list(TeamIdBin)),
     TextBin = proplists:get_value(<<"text">>, ParamList),
-    
+
+    InArticleId = case proplists:get_value(<<"in_article_id">>, ParamList) of
+                      undefined -> null;
+                      ArticleId -> list_to_integer(binary_to_list(ArticleId))
+                  end,
+
+    InReplyToId = case proplists:get_value(<<"in_reply_to_id">>, ParamList) of
+                      undefined -> null;
+                      MsgId -> list_to_integer(binary_to_list(MsgId))
+                  end,
+
     Usr = hs_session:get_usr(SessionKey),
-    Msg = #message{usr_id = Usr#usr.id, team_id = TeamId, text = TextBin},
+    Msg = #message{usr_id = Usr#usr.id, team_id = TeamId, text = TextBin,
+                   in_article_id = InArticleId, 
+                   in_reply_to_id = InReplyToId},
 
     Reply = case hs_team:add_message(Msg) of
                 {ok, Message} ->
