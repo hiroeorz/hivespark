@@ -79,6 +79,8 @@ mget_msg(MsgIdList) when is_list(MsgIdList) ->
                              end, 
                              MsgBinList),
             NewList = lists:delete(undefined, List),
+            ?debugVal(KeyList),
+            ?debugVal(NewList),
             repaire_msg_list_from_db(MsgIdList, NewList)
     end.
 
@@ -97,6 +99,8 @@ repaire_msg_list_from_db([], _, Results) ->
     lists:reverse(Results);
 
 repaire_msg_list_from_db([MsgId | IdTail], [], Results) ->
+    io:format("repareing cache message from db (2.~n"),
+
     case hs_message_db:get_msg(MsgId) of
                 {ok, NewMsg} ->
                     spawn(fun() -> hs_message_cache:save(NewMsg) end),
@@ -108,6 +112,7 @@ repaire_msg_list_from_db([MsgId | IdTail], [], Results) ->
 repaire_msg_list_from_db([MsgId | IdTail], [Msg | MsgTail], Results) ->
     case Msg of
         undefined ->
+            io:format("repareing cache message from db (1.~n"),
             case hs_message_db:get_msg(MsgId) of
                 {ok, NewMsg} ->
                     spawn(fun() -> hs_message_cache:save(NewMsg) end),

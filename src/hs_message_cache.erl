@@ -87,7 +87,10 @@ mget_msg(MsgIdList) when is_list(MsgIdList) ->
 
 get_key(MsgId) when is_binary(MsgId) -> 
     get_key(binary_to_list(MsgId));
-  
-get_key(MsgId) ->
-    list_to_binary(lists:flatten([?MSG_KEY_HEADER, MsgId])).
+
+get_key(MsgId) when is_integer(MsgId)->
+    get_key(integer_to_list(MsgId));
+
+get_key(MsgId) when is_list(MsgId)->
+    list_to_binary(?MSG_KEY_HEADER ++ MsgId).
 
