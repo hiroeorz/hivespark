@@ -3,6 +3,12 @@
 -define(DB, pool1).
 -define(PGSQL_DEFAULT_PARAMETERS, [{"integer_datetimes", "on"}]).
 
+-define(USR_DB, <<"usr_cache">>).
+-define(USR_NAME_INDEX_KEY, <<"usr_name_index">>).
+-define(USRS_TEAMS_KEY, <<"usrs_teams">>).
+-define(USR_PID_KEY, <<"usr_pid_list">>).
+
+
 -record(http_state, {session_key :: binary()}).
 
 -record(usr, {id               ::integer(),

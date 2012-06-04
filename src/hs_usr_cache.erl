@@ -18,11 +18,6 @@
          add_worker_pid/2, delete_worker_pid/2, get_worker_pids/1,
          clear_all_worker_pid/0]).
 
--define(USR_DB, <<"usr_cache">>).
--define(USR_NAME_INDEX_KEY, <<"usr_name_index">>).
--define(USRS_TEAMS_KEY, <<"usrs_teams">>).
--define(USR_PID_KEY, <<"usr_pid_list">>).
-
 -define(KEY_PHRASE_1, "message_box3").
 -define(KEY_PHRASE_2, "SHIMANE").
 -define(KEY_PHRASE_3, "MATSUE").
