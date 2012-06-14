@@ -46,7 +46,7 @@ create(TeamId, OwnerId, Name, Description, Contents) when is_integer(TeamId) and
             
             case hs_file:save(Key, Contents) of
                 {s3_error, Reason} -> 
-                    {ok, deleted} = hs_teamfile:delete(TeamFile#teamfile.id),
+                    {ok, deleted} = hs_teamfile_db:delete(TeamFile#teamfile.id),
                     {s3_error, Reason};
                 {ok, _} ->
                     {ok, TeamFile#teamfile{contents = Contents}}
