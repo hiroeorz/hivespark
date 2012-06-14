@@ -58,6 +58,15 @@
                   lat           ::string(),
                   lng           ::string()}).
 
+-record(teamfile, {id                       ::integer(),
+                   team_id                  ::integer(),
+                   name                     ::string(),
+                   owner_id                 ::integer(),
+                   description = ""         ::string(),
+                   created_at               ::non_neg_integer(),
+                   updated_at               ::non_neg_integer(),
+                   contents = ""            ::binary()}).
+
 -define(ROUTE,
         C == <<"auth">>, A == <<"login">>;
         C == <<"auth">>, A == <<"index">>;

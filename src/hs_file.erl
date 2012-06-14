@@ -61,9 +61,10 @@ stop() ->
 %% Amazon S3へデータを保存します
 %% @end
 %%--------------------------------------------------------------------
--spec save(Key, Val) -> ok | {error, Reason} when
+-spec save(Key, Val) -> {ok, VersionId} | {s3_error, Reason} when
       Key :: string(),
       Val :: binary(),
+      VersionId :: string(),
       Reason :: atom().
 save(Key, Val) when is_list(Key) and is_binary(Val) ->
     gen_server:call(?SERVER, {save, Key, Val}).
@@ -73,11 +74,11 @@ save(Key, Val) when is_list(Key) and is_binary(Val) ->
 %% Amazon S3からデータを読み出します
 %% @end
 %%--------------------------------------------------------------------
--spec read(Key) -> {ok, Content, Res} | {error, Reason} when
+-spec read(Key) -> {ok, Content, Res} | {aws_error, ErrMsg} when
       Key :: string(),
       Content :: binary(),
       Res :: [tuple()],
-      Reason :: atom().
+      ErrMsg :: tuple().
 read(Key) when is_list(Key) ->
     gen_server:call(?SERVER, {read, Key}).
 

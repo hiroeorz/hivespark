@@ -30,12 +30,12 @@
 %% @doc exec sql query.
 %% @end
 %%--------------------------------------------------------------------
--spec q(Sql) -> ok | {ok, [#usr{}]} | {error, Reason} when
+-spec q(Sql) -> ok | {ok, [#team{}]} | {error, Reason} when
       Sql :: string(),
       Reason :: tuple().
 q(Sql) -> q(Sql, []).
 
--spec q(Sql, Params) -> ok | {ok, [#usr{}]} | {error, Reason} when
+-spec q(Sql, Params) -> ok | {ok, [#team{}]} | {error, Reason} when
       Sql :: string(),
       Params :: [any()],
       Reason :: tuple().
@@ -183,7 +183,7 @@ update(Team) ->
     end.
 
 %%--------------------------------------------------------------------
-%% @doc delete usr from database.
+%% @doc delete team from database.
 %% @end
 %%--------------------------------------------------------------------
 -spec delete(TeamId) -> {ok, deleted} | {error, Reason} when
