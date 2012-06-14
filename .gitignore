@@ -7,3 +7,4 @@ db
 deps
 .DS_Store
 rel/hivespark
+priv/amazon/*.key

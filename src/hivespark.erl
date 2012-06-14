@@ -23,6 +23,7 @@ start() ->
     application:start(postgres_pool),
     application:start(eredis_pool),
     application:start(cowboy),
+    erlcloud:start(),
     application:start(hivespark).
 
 start_http_listener(Port, ListenerCount) when is_integer(Port) and

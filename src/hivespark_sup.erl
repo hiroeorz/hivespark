@@ -69,7 +69,10 @@ init([]) ->
     Session = {hs_session, {hs_session, start_link, []},
                Restart, Shutdown, Type, [hs_session]},
 
-    {ok, {SupFlags, [TeamSup, Session]}}.
+    File = {hs_file, {hs_file, start_link, []},
+            Restart, Shutdown, Type, [hs_file]},
+
+    {ok, {SupFlags, [TeamSup, Session, File]}}.
 
 %%%===================================================================
 %%% Internal functions

@@ -14,7 +14,8 @@
 		  sasl,
          	  postgres_pool,
          	  eredis_pool,
-         	  cowboy
+         	  cowboy,
+                  erlcloud
                  ]},
   {mod, {hivespark_app, []}},
   {env, [
