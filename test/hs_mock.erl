@@ -20,6 +20,11 @@
          pg_record_message_1/0, record_message_1/0,
          pg_record_message_2/0, record_message_2/0]).
 
+-export([pg_teamfile_fields_tuples/0,
+         pg_record_teamfile_1/0, record_teamfile_1/0,
+         pg_record_teamfile_2/0, record_teamfile_2/0,
+         pg_record_teamfile_3/0, record_teamfile_3/0]).
+
 pg_usr_fields_tuples() ->
     [{column, <<"id">>, 0, 0, 0, 0}, 
      {column, <<"name">>, 0, 0, 0, 0}, 
@@ -178,3 +183,51 @@ record_message_2() ->
              in_reply_to_id = null,
              created_at = pgdatetime_to_seconds({{2012,5,17}, {23,55,4.0}})
             }.
+
+pg_teamfile_fields_tuples() ->
+    [{column, <<"id">>, 0, 0, 0, 0}, 
+     {column, <<"team_id">>, 0, 0, 0, 0},
+     {column, <<"name">>, 0, 0, 0, 0}, 
+     {column, <<"owner_id">>, 0, 0, 0, 0},
+     {column, <<"description">>, 0, 0, 0, 0}, 
+     {column, <<"created_at">>, 0, 0, 0, 0},
+     {column, <<"updated_at">>, 0, 0, 0, 0}].
+
+pg_record_teamfile_1() ->
+    {1, 2, "document.pdf", 3, "this is file 1", 
+     {{2012,5,18}, {23,55,4.0}}, {{2012,6,18}, {23,55,5.0}}}.
+
+pg_record_teamfile_2() ->
+    {11, 22, "document2.pdf", 33, "this is file 2", 
+     {{2011,5,18}, {23,55,4.0}}, {{2011,6,18}, {23,55,5.0}}}.
+
+pg_record_teamfile_3() ->
+    {111, 222, "document3.pdf", 333, "this is file 3", 
+     {{2010,5,18}, {23,55,4.0}}, {{2010,6,18}, {23,55,5.0}}}.
+
+record_teamfile_1() ->
+    #teamfile{id = 1,
+              team_id = 2,
+              name = "document.pdf", 
+              owner_id = 3,
+              description = "this is file 1",
+              created_at = pgdatetime_to_seconds({{2012,5,18}, {23,55,4.0}}),
+              updated_at = pgdatetime_to_seconds({{2012,6,18}, {23,55,5.0}})}.
+
+record_teamfile_2() ->
+    #teamfile{id = 11,
+              team_id = 22,
+              name = "document2.pdf", 
+              owner_id = 33,
+              description = "this is file 2",
+              created_at = pgdatetime_to_seconds({{2011,5,18}, {23,55,4.0}}),
+              updated_at = pgdatetime_to_seconds({{2011,6,18}, {23,55,5.0}})}.
+
+record_teamfile_3() ->
+    #teamfile{id = 111,
+              team_id = 222,
+              name = "document3.pdf", 
+              owner_id = 333,
+              description = "this is file 3",
+              created_at = pgdatetime_to_seconds({{2010,5,18}, {23,55,4.0}}),
+              updated_at = pgdatetime_to_seconds({{2010,6,18}, {23,55,5.0}})}.

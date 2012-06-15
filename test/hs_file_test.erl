@@ -15,7 +15,8 @@ start_link_test_() ->
       [
        {"サーバーの起動",
         fun() ->
-                ?assertMatch({ok, _}, hs_file:start_link())
+                ?assertMatch({ok, _}, hs_file:start_link()),
+                ?assert(meck:validate(erlcloud_s3))
         end
        }
       ]
@@ -40,7 +41,8 @@ save_test_() ->
                                    [{version_id, "null"}]
                            end),
 
-                ?assertMatch({ok, _}, hs_file:save(Key, Val))
+                ?assertMatch({ok, _}, hs_file:save(Key, Val)),
+                ?assert(meck:validate(erlcloud_s3))
         end
        },
 
@@ -54,7 +56,8 @@ save_test_() ->
                                    erlang:error({s3_error, 500, "error"})
                            end),
 
-                ?assertMatch({s3_error, _, _}, hs_file:save(Key, Val))
+                ?assertMatch({s3_error, _, _}, hs_file:save(Key, Val)),
+                ?assertNot(meck:validate(erlcloud_s3))
         end
        }
 
@@ -80,7 +83,8 @@ read_test_() ->
                                    S3_Obj
                            end),
 
-                ?assertEqual({ok, Val, S3_Obj}, hs_file:read(Key))
+                ?assertEqual({ok, Val, S3_Obj}, hs_file:read(Key)),
+                ?assert(meck:validate(erlcloud_s3))
         end
        },
 
@@ -96,7 +100,8 @@ read_test_() ->
                                                   "xml message"}})
                            end),
 
-                ?assertMatch({aws_error, _}, hs_file:read(Key))
+                ?assertMatch({aws_error, _}, hs_file:read(Key)),
+                ?assertNot(meck:validate(erlcloud_s3))
         end
        }
 
@@ -120,7 +125,8 @@ delete_test_() ->
                                    [{delete_marker, false}, {version_id, "null"}]
                            end),
 
-                ?assertMatch({ok, _}, hs_file:delete(Key))
+                ?assertMatch({ok, _}, hs_file:delete(Key)),
+                ?assert(meck:validate(erlcloud_s3))
         end
        }
 
